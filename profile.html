@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(5, 7, 10, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .logout-link {
+            color: #ff4b2b;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .profile-info {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+            background: #2d3436;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #a0a0a0;
+            border: 2px solid var(--glass-border);
+        }
+        .user-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
+        .user-email { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 25px; }
+        
+        .details-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            margin: 0 15px 20px;
+            position: relative;
+        }
+        .details-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .detail-row:last-child { border: none; }
+        .detail-label { color: var(--text-dim); font-size: 0.85rem; }
+        .detail-value { font-weight: 700; font-size: 0.9rem; }
+        .val-highlight { color: var(--cyber-blue); }
+        .val-success { color: var(--accent-green); }
+        .val-gold { color: var(--accent-yellow); }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <header class="profile-header">
+        <div class="logo">MY PROFILE</div>
+        <div class="logout-link" onclick="auth.logout()">Logout</div>
+    </header>
+
+    <div class="profile-info">
+        <div class="avatar-circle">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="user-name" id="disp-name">Loading...</div>
+        <div class="user-email" id="disp-email">email@example.com</div>
+
+        <!-- Account Balance Card -->
+        <div class="details-card">
+            <div class="detail-row">
+                <span class="detail-label">Available Balance</span>
+                <span class="detail-value val-gold" id="disp-balance">৳ 0.00</span>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="details-card">
+            <div class="detail-row">
+                <span class="detail-label">Total Played</span>
+                <span class="detail-value val-highlight" id="disp-played">0</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Matches Won</span>
+                <span class="detail-value val-success" id="disp-wins">0</span>
+            </div>
+        </div>
+
+        <div class="details-card">
+            <div class="detail-row">
+                <span class="detail-label">User Name</span>
+                <span class="detail-value" id="disp-username">Username</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Account Status</span>
+                <span class="detail-value val-success">Active</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Account Type</span>
+                <span class="detail-value" id="disp-type">User</span>
+            </div>
+        <!-- Navigation Actions -->
+        <h4 style="text-align: left; margin: 30px 20px 15px; color: var(--text-main); font-size: 1.1rem;">Account Actions</h4>
+        <div class="details-card" style="padding: 0; overflow: hidden; margin: 0 15px;">
+            <a href="withdraw_history.html" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: white;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 45px; height: 45px; background: rgba(5, 242, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--cyber-blue);">
+                        <i class="fas fa-history" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1rem;">Withdrawal History</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">Check your withdrawal status</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="color: var(--text-dim);"></i>
+            </a>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-gamepad"></i>
+            <span>Play</span>
+        </a>
+        <a href="matches.html" class="nav-item">
+            <i class="fas fa-list-ul"></i>
+            <span>My Matches</span>
+        </a>
+        <a href="results.html" class="nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Results</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <i class="fas fa-user-circle"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script src="auth.js"></script>
+    <script src="wallet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (auth.syncUser) auth.syncUser();
+            
+            if (auth.currentUser) {
+                const u = auth.currentUser;
+                document.getElementById('disp-name').innerText = u.name || 'User';
+                document.getElementById('disp-email').innerText = u.email || '';
+                document.getElementById('disp-username').innerText = u.name || 'User';
+                document.getElementById('disp-balance').innerText = `৳ ${Number(u.balance || 0).toFixed(2)}`;
+                document.getElementById('disp-played').innerText = u.myMatches ? u.myMatches.length : 0;
+                document.getElementById('disp-type').innerText = u.isAdmin ? 'Admin' : 'Premium Player';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-container {
+            padding: 20px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-field {
+            margin-bottom: 15px;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            color: var(--text-dim);
+        }
+
+        .form-field input,
+        .form-field select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .add-btn {
+            background: var(--accent-green);
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .match-list-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .del-btn {
+            color: #ff5555;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-header">
+        <a href="index.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo">ADMIN PANEL</div>
+        <div></div>
+    </div>
+
+    <div class="admin-container">
+        <div class="form-card">
+            <h3 style="margin-bottom: 20px;">Create New Match</h3>
+            <div class="form-field">
+                <label>Match Title</label>
+                <input type="text" id="m-title" placeholder="e.g. BR SOLO SURVIVAL">
+            </div>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Match Type</label>
+                    <select id="m-type">
+                        <option value="BR">BR CUSTOM</option>
+                        <option value="SURVIVAL">CS 2 vs 2</option>
+                        <option value="LONE_WOLF">LONE WOLF</option>
+                        <option value="CS_4V4">CS 4 vs 4</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Entry Type</label>
+                    <input type="text" id="m-entry-type" placeholder="Solo/Duo/Squad">
+                </div>
+                <div class="form-field">
+                    <label>Entry Fee (TK)</label>
+                    <input type="number" id="m-fee" value="20">
+                </div>
+                <div class="form-field">
+                    <label>Win Prize (TK)</label>
+                    <input type="number" id="m-prize" value="800">
+                </div>
+                <div class="form-field">
+                    <label>Per Kill (TK)</label>
+                    <input type="number" id="m-kill" value="10">
+                </div>
+                <div class="form-field">
+                    <label>Total Spots</label>
+                    <input type="number" id="m-spots" value="48">
+                </div>
+                <div class="form-field">
+                    <label>Room ID (Optional)</label>
+                    <input type="text" id="m-room-id" placeholder="e.g. 1234567">
+                </div>
+                <div class="form-field">
+                    <label>Room Password</label>
+                    <input type="text" id="m-room-pass" placeholder="e.g. 123">
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Match Time (Minutes from now)</label>
+                <input type="number" id="m-time" value="60">
+            </div>
+            <button class="add-btn" onclick="addMatch()">Add Tournament</button>
+            <button class="add-btn" style="background:#302b63; color:white; margin-top:10px;"
+                onclick="location.href='admin_deposits.html'">Manage Deposit Requests</button>
+            <button class="add-btn" style="background:#312e81; color:white; margin-top:10px;"
+                onclick="location.href='admin_withdrawals.html'">Manage Withdrawals</button>
+            <button class="add-btn" style="background:#00f2ff; color:black; margin-top:10px;"
+                onclick="location.href='admin_users.html'">Manage Users</button>
+        </div>
+
+        <div class="form-card">
+            <h3 style="margin-bottom: 20px; color: var(--accent-yellow);">Rules Settings</h3>
+            <div class="form-field" style="margin-bottom: 20px;">
+                <label style="color: var(--cyber-blue); font-weight: 800; display: block; margin-bottom: 8px;">BR Tournament Rules</label>
+                <textarea id="admin-rules-br" rows="5" 
+                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; border-radius: 10px; padding: 15px; font-family: inherit; font-size: 0.9rem; resize: vertical;" 
+                    placeholder="Enter Battle Royale rules..."></textarea>
+            </div>
+            <div class="form-field">
+                <label style="color: var(--accent-green); font-weight: 800; display: block; margin-bottom: 8px;">CS Tournament Rules</label>
+                <textarea id="admin-rules-cs" rows="5" 
+                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; border-radius: 10px; padding: 15px; font-family: inherit; font-size: 0.9rem; resize: vertical;" 
+                    placeholder="Enter Clash Squad rules..."></textarea>
+                <button class="add-btn" style="margin-top: 15px;" onclick="saveRules()">SAVE ALL RULES</button>
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">These rules will be displayed in separate sections on the Rules page.</p>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3 style="margin-bottom: 20px; color: var(--accent-yellow);">Payment Settings</h3>
+            <div class="form-field">
+                <label>Official bKash Number (Personal)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="admin-bkash-num" placeholder="e.g. 017XXXXXXXX">
+                    <button class="add-btn" style="width: auto; padding: 0 20px;" onclick="saveBkashNumber()">SAVE</button>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">This number will be displayed to users on the Deposit page.</p>
+            </div>
+        </div>
+
+        <h3>Existing Matches</h3>
+        <div id="admin-match-list" style="margin-top:15px;"></div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="matches.js"></script>
+    <script>
+        // Check if admin
+        if (!auth.currentUser || !auth.currentUser.isAdmin) {
+            showToast("Admin Access Denied!", "error");
+            setTimeout(() => location.href = 'index.html', 1500);
+        }
+
+        function loadAdminMatches() {
+            const list = document.getElementById('admin-match-list');
+            const matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            
+            // Load Settings
+            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            if (settings.bkashNumber) {
+                const bInput = document.getElementById('admin-bkash-num');
+                if (bInput) bInput.value = settings.bkashNumber;
+            }
+            if (settings.rules_br) {
+                const brText = document.getElementById('admin-rules-br');
+                if (brText) brText.value = settings.rules_br;
+            }
+            if (settings.rules_cs) {
+                const csText = document.getElementById('admin-rules-cs');
+                if (csText) csText.value = settings.rules_cs;
+            }
+
+            list.innerHTML = matches.map(m => `
+                <div class="match-list-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight:bold;">${m.title}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim);">${m.type} - ৳${m.fee} FEE</div>
+                        </div>
+                        <i class="fas fa-trash del-btn" onclick="deleteMatch(${m.id})"></i>
+                    </div>
+                    <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <input type="text" placeholder="Room ID" id="rid-${m.id}" value="${m.roomId || ''}" 
+                               style="width: 40%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
+                        <input type="text" placeholder="Pass" id="rpass-${m.id}" value="${m.roomPass || ''}" 
+                               style="width: 25%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
+                        <button onclick="updateRoomInfo(${m.id})" 
+                                style="flex-grow: 1; background: var(--cyber-blue); border: none; border-radius: 4px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
+                            UPDATE ROOM
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addMatch() {
+            const title = document.getElementById('m-title').value;
+            const type = document.getElementById('m-type').value;
+            const entryType = document.getElementById('m-entry-type').value;
+            const fee = parseInt(document.getElementById('m-fee').value);
+            const prize = parseInt(document.getElementById('m-prize').value);
+            const kill = parseInt(document.getElementById('m-kill').value);
+            const spots = parseInt(document.getElementById('m-spots').value);
+            const timeOffset = parseInt(document.getElementById('m-time').value);
+            const roomId = document.getElementById('m-room-id').value;
+            const roomPass = document.getElementById('m-room-pass').value;
+
+            if (!title) return showToast("Title is required!", "error");
+
+            const matches = getMatches();
+            const newM = {
+                id: Date.now(),
+                title: title,
+                type: type,
+                entryType: entryType || "Solo",
+                entryFee: Number(fee) || 0,
+                winPrize: Number(prize) || 0,
+                perKill: Number(kill) || 0,
+                map: "Bermuda",
+                version: "MOBILE",
+                totalSpots: Number(spots) || 48,
+                filledSpots: 0,
+                startTime: new Date().getTime() + (Number(timeOffset) || 60) * 60000,
+                roomId: roomId || "",
+                roomPass: roomPass || ""
+            };
+
+            matches.push(newM);
+            localStorage.setItem('ff_matches', JSON.stringify(matches));
+            showToast("Tournament Added Successfully!", "success");
+            loadAdminMatches();
+
+            // Clear title
+            document.getElementById('m-title').value = '';
+        }
+
+        function deleteMatch(id) {
+            showCustomConfirm("Are you sure you want to delete this match? This action cannot be undone.", "DELETE MATCH", () => {
+                let matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+                matches = matches.filter(m => m.id !== id);
+                localStorage.setItem('ff_matches', JSON.stringify(matches));
+                loadAdminMatches();
+                showToast("Match deleted successfully", "success");
+            });
+        }
+
+        function updateRoomInfo(id) {
+            const rid = document.getElementById(`rid-${id}`).value;
+            const rpass = document.getElementById(`rpass-${id}`).value;
+            
+            let matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            const idx = matches.findIndex(m => m.id === id);
+            
+            if (idx !== -1) {
+                matches[idx].roomId = rid;
+                matches[idx].roomPass = rpass;
+                localStorage.setItem('ff_matches', JSON.stringify(matches));
+                showToast("Room Info Updated!", "success");
+            }
+        }
+
+        function saveBkashNumber() {
+            const num = document.getElementById('admin-bkash-num').value;
+            if(!num) return showToast("Please enter a valid number", "error");
+            
+            let settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            settings.bkashNumber = num;
+            localStorage.setItem('ff_settings', JSON.stringify(settings));
+            
+            showToast("bKash Number Saved!", "success");
+        }
+
+        function saveRules() {
+            const brRules = document.getElementById('admin-rules-br').value;
+            const csRules = document.getElementById('admin-rules-cs').value;
+            
+            let settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            settings.rules_br = brRules;
+            settings.rules_cs = csRules;
+            localStorage.setItem('ff_settings', JSON.stringify(settings));
+            
+            showToast("All Rules Saved Successfully!", "success");
+        }
+
+        loadAdminMatches();
+    </script>
+</body>
+
+</html>

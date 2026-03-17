@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw Money - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .withdraw-container { padding: 20px; }
+        .method-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .method-card img { width: 60px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-dim); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #00f2ff, #0088ff);
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: black;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+        .bal-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: var(--accent-yellow);
+        }
+        .limit-notice {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <a href="wallet.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo" style="background: linear-gradient(to right, #00f2ff, #0088ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">WITHDRAW</div>
+        <div></div>
+    </header>
+
+    <div class="withdraw-container">
+        <div class="method-card">
+            <h3>Current Balance</h3>
+            <div class="bal-badge">৳ <span id="w-balance">0</span></div>
+        </div>
+
+        <div class="form-card" style="background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--glass-border);">
+            <div class="form-group">
+                <label>Withdrawal Method</label>
+                <select id="w-method">
+                    <option value="bKash">bKash (Personal)</option>
+                    <option value="Nagad">Nagad (Personal)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Account Number</label>
+                <input type="text" id="w-account" placeholder="e.g. 017XXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label>Amount (TK)</label>
+                <input type="number" id="w-amount" placeholder="Minimum 100 TK">
+                <div class="limit-notice">* Minimum withdraw: 100 TK</div>
+            </div>
+            <button class="submit-btn" onclick="submitWithdraw()">Submit Request</button>
+        </div>
+    </div>
+
+    <!-- Container for Toast Messages -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <script src="auth.js"></script>
+    <script src="wallet.js"></script>
+    <script>
+        // Use an interval to wait for auth state just like other pages
+        const wInterval = setInterval(() => {
+            if (auth.currentUser) {
+                clearInterval(wInterval);
+                document.getElementById('w-balance').innerText = auth.currentUser.balance || 0;
+            }
+        }, 100);
+
+        function submitWithdraw() {
+            if (!auth.currentUser) return showToast("Please login first", "error");
+            
+            const method = document.getElementById('w-method').value;
+            const account = document.getElementById('w-account').value;
+            const amount = Number(document.getElementById('w-amount').value);
+
+            if (!account || !amount) {
+                return showToast("Please fill all fields!", "error");
+            }
+
+            if (amount < 100) {
+                return showToast("Minimum withdraw is 100 TK", "error");
+            }
+
+            if (auth.currentUser.balance < amount) {
+                return showToast("Insufficient balance!", "error");
+            }
+
+            // Wallet logic handles deducting balance and saving request
+            if (wallet.submitWithdrawRequest(amount, method, account)) {
+                document.getElementById('w-balance').innerText = auth.currentUser.balance;
+                document.getElementById('w-amount').value = '';
+                document.getElementById('w-account').value = '';
+                showToast("Withdraw Request Submitted!", "success");
+                setTimeout(() => location.href = 'wallet.html', 1500);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Money - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .deposit-container { padding: 20px; }
+        .method-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .method-card img { width: 60px; margin-bottom: 10px; }
+        .number-box {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: var(--accent-yellow);
+        }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-dim); }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+        }
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <a href="wallet.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo">DEPOSIT</div>
+        <div></div>
+    </header>
+
+    <div class="deposit-container">
+        <div class="method-card">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6O4N93h6XyKqg9h_oXZZ0Z5VlK8f0_X0J9A&s" alt="bKash">
+            <h3>Send Money to:</h3>
+            <div class="number-box" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                <span id="display-bkash-num">Loading...</span>
+                <i class="fas fa-copy" style="cursor: pointer; color: var(--text-dim);" onclick="copyBkashNumber()" title="Copy Number"></i>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">বিকাশ পার্সোনাল নাম্বারে সেন্ড মানি করুন এবং ট্রানজেকশন আইডি নিচে দিন।</p>
+        </div>
+
+        <div class="form-card" style="background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--glass-border);">
+            <div class="form-group">
+                <label>Amount (TK)</label>
+                <input type="number" id="dep-amount" placeholder="e.g. 100">
+            </div>
+            <div class="form-group">
+                <label>Transaction ID (TXID)</label>
+                <input type="text" id="dep-txid" placeholder="e.g. BCD12345678">
+            </div>
+            <button class="submit-btn" onclick="submitDeposit()">Submit Request</button>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="wallet.js"></script>
+    <script>
+        function submitDeposit() {
+            const amount = document.getElementById('dep-amount').value;
+            const txid = document.getElementById('dep-txid').value;
+            
+            if (!amount || !txid) return showToast("Please fill all fields!", "error");
+            
+            if (wallet.submitDepositRequest(amount, txid, 'bKash')) {
+                showToast("Request Submitted Successfully!", "success");
+                setTimeout(() => location.href = 'wallet.html', 1500);
+            }
+        }
+
+        function loadBkashNumber() {
+            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            const numDisplay = document.getElementById('display-bkash-num');
+            if (settings.bkashNumber) {
+                numDisplay.innerText = settings.bkashNumber;
+            } else {
+                numDisplay.innerText = "Number not set by Admin";
+                numDisplay.style.color = "#ef4444";
+            }
+        }
+
+        function copyBkashNumber() {
+            const num = document.getElementById('display-bkash-num').innerText;
+            if (num && num !== "Loading..." && num !== "Number not set by Admin") {
+                navigator.clipboard.writeText(num).then(() => {
+                    showToast("Number Copied!", "success");
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+        }
+
+        // Initialize display
+        loadBkashNumber();
+    </script>
+</body>
+</html>

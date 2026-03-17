@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Matches - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <header class="app-header">
+        <a href="index.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo">MY MATCHES</div>
+        <div></div>
+    </header>
+
+    <div style="padding: 20px;">
+        <div class="section-title">
+            <i class="fas fa-history"></i> Joined Tournaments
+        </div>
+        <div id="my-matches-list">
+            <!-- Joined matches will be injected here -->
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-gamepad"></i>
+            <span>Play</span>
+        </a>
+        <a href="matches.html" class="nav-item active">
+            <i class="fas fa-list-ul"></i>
+            <span>My Matches</span>
+        </a>
+        <a href="results.html" class="nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Results</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script src="auth.js"></script>
+    <script src="matches.js"></script>
+    <script>
+        function renderMyMatches() {
+            const list = document.getElementById('my-matches-list');
+            const joinedIds = auth.currentUser ? (auth.currentUser.myMatches || []) : [];
+            const allMatches = getMatches();
+            
+            const myMatches = allMatches.filter(m => joinedIds.includes(m.id));
+
+            if (myMatches.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center; padding:80px 20px; color:var(--text-dim);">
+                        <i class="fas fa-ghost" style="font-size:3rem; margin-bottom:20px; opacity:0.3;"></i>
+                        <p>You haven't joined any matches yet.</p>
+                        <a href="index.html" class="btn-premium" style="display:inline-block; margin-top:20px; text-decoration:none;">Join Now</a>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = myMatches.map(match => generateMatchCard(match)).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', renderMyMatches);
+    </script>
+</body>
+</html>

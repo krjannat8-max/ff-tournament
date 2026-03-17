@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Withdrawals - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-container { padding: 20px; }
+        .request-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        .req-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; margin-bottom: 15px; }
+        .req-label { color: var(--text-dim); }
+        .action-row { display: flex; gap: 10px; }
+        .approve-btn { background: var(--accent-green); color: black; border: none; padding: 10px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer; }
+        .reject-btn { background: #ff5555; color: white; border: none; padding: 10px; border-radius: 8px; flex: 1; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <a href="admin.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo" style="background: linear-gradient(to right, #00f2ff, #0088ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">WITHDRAW REQUESTS</div>
+        <div></div>
+    </header>
+
+    <div class="admin-container">
+        <div id="requests-list">
+            <!-- Requests will be injected here -->
+        </div>
+    </div>
+
+    <!-- Inject Global Confirm Logic securely since admin pages need it -->
+    <script src="auth.js"></script>
+    <script src="wallet.js"></script>
+    <script>
+        // Admin Check
+        if (!auth.currentUser || !auth.currentUser.isAdmin) location.href = 'index.html';
+
+        function loadRequests() {
+            const list = document.getElementById('requests-list');
+            const requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
+            const pending = requests.filter(r => r.status === 'pending');
+
+            if (pending.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:50px;">No pending withdrawal requests</p>`;
+                return;
+            }
+
+            list.innerHTML = pending.map(req => `
+                <div class="request-card">
+                    <div style="font-weight:bold; margin-bottom:10px;">${req.userName} <span style="font-size:0.8rem; color:var(--text-dim);">(${req.userEmail})</span></div>
+                    <div class="req-info">
+                        <div><span class="req-label">Amount:</span> <span style="color:#ef4444; font-weight:bold;">৳ ${req.amount}</span></div>
+                        <div><span class="req-label">Method:</span> ${req.method}</div>
+                        <div style="grid-column: span 2;"><span class="req-label">Account:</span> <span style="color:var(--accent-yellow); font-size:1.1rem; letter-spacing:1px;">${req.account}</span></div>
+                    </div>
+                    <div class="action-row">
+                        <button class="approve-btn" onclick="approveWithdrawal(${req.id})">Approve (Sent)</button>
+                        <button class="reject-btn" onclick="rejectWithdrawal(${req.id}, ${req.amount}, '${req.userEmail}')">Reject & Refund</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function approveWithdrawal(id) {
+            showCustomConfirm("Did you successfully send the money to the user's account? This will mark the request as approved.", "APPROVE WITHDRAWAL", () => {
+                let requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
+                const reqIndex = requests.findIndex(r => r.id === id);
+                if (reqIndex !== -1) {
+                    requests[reqIndex].status = 'approved';
+                    requests[reqIndex].approvedAt = new Date().toISOString();
+                    localStorage.setItem('ff_withdrawals', JSON.stringify(requests));
+                    showToast("Withdrawal marked as Approved!", "success");
+                    loadRequests();
+                }
+            });
+        }
+
+        function rejectWithdrawal(id, amount, email) {
+            showCustomConfirm(`This will mark the request as rejected and REFUND ৳ ${amount} back to the user's account.`, "REJECT & REFUND", () => {
+                let requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
+                let users = JSON.parse(localStorage.getItem('ff_users')) || [];
+                
+                const reqIndex = requests.findIndex(r => r.id === id);
+                if (reqIndex === -1) return;
+
+                const userIndex = users.findIndex(u => u.email === email);
+                if (userIndex !== -1) {
+                    // Refund to user balance
+                    users[userIndex].balance = (Number(users[userIndex].balance) || 0) + Number(amount);
+                    localStorage.setItem('ff_users', JSON.stringify(users));
+                    
+                    // Update request status
+                    requests[reqIndex].status = 'rejected';
+                    localStorage.setItem('ff_withdrawals', JSON.stringify(requests));
+                    
+                    // Sync if current user
+                    if (auth.currentUser && auth.currentUser.email === email) {
+                        auth.syncUser ? auth.syncUser() : auth.syncBalance();
+                    }
+
+                    showToast(`Rejected & Refunded ৳ ${amount}`, "success");
+                    loadRequests();
+                } else {
+                    showToast("User not found for refund!", "error");
+                }
+            });
+        }
+
+        loadRequests();
+    </script>
+</body>
+</html>

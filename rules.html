@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rules - FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .rules-container { padding: 20px; padding-bottom: 100px; }
+        
+        /* Tab Styles */
+        .tabs-header {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            border: 1px solid var(--glass-border);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+        }
+        .tab-btn.active.br-tab { color: var(--accent-yellow); }
+        .tab-btn.active.cs-tab { color: var(--accent-green); }
+
+        .rules-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            position: relative;
+            line-height: 1.6;
+            color: white;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            min-height: 200px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rules-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .rule-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .rule-header i { font-size: 1.5rem; }
+        .rule-header h2 { font-size: 1.1rem; margin: 0; font-weight: 800; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <header class="app-header">
+        <a href="index.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo">TOURNAMENT RULES</div>
+        <div></div>
+    </header>
+
+    <div class="rules-container">
+        <!-- Tabs Selection -->
+        <div class="tabs-header">
+            <button class="tab-btn active br-tab" onclick="switchTab('br')">
+                <i class="fas fa-trophy"></i> BR Rules
+            </button>
+            <button class="tab-btn cs-tab" onclick="switchTab('cs')">
+                <i class="fas fa-crosshairs"></i> CS Rules
+            </button>
+        </div>
+
+        <!-- BR Content -->
+        <div id="br-panel" class="tab-panel">
+            <div class="rules-card">
+                <div class="rule-header" style="color: var(--accent-yellow);">
+                    <i class="fas fa-trophy"></i>
+                    <h2>BATTLE ROYALE RULES</h2>
+                </div>
+                <div id="rules-br-content">Loading...</div>
+            </div>
+        </div>
+
+        <!-- CS Content -->
+        <div id="cs-panel" class="tab-panel" style="display: none;">
+            <div class="rules-card">
+                <div class="rule-header" style="color: var(--accent-green);">
+                    <i class="fas fa-crosshairs"></i>
+                    <h2>CLASH SQUAD RULES</h2>
+                </div>
+                <div id="rules-cs-content">Loading...</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+            <p><i class="fas fa-shield-alt" style="margin-right: 5px;"></i> All matches are monitored for fair play.</p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRulesData();
+        });
+
+        function loadRulesData() {
+            const brContent = document.getElementById('rules-br-content');
+            const csContent = document.getElementById('rules-cs-content');
+            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            
+            brContent.innerText = settings.rules_br || "No Battle Royale rules have been set yet.";
+            csContent.innerText = settings.rules_cs || "No Clash Squad rules have been set yet.";
+        }
+
+        function switchTab(type) {
+            const brBtn = document.querySelector('.br-tab');
+            const csBtn = document.querySelector('.cs-tab');
+            const brPanel = document.getElementById('br-panel');
+            const csPanel = document.getElementById('cs-panel');
+
+            if (type === 'br') {
+                brBtn.classList.add('active');
+                csBtn.classList.remove('active');
+                brPanel.style.display = 'block';
+                csPanel.style.display = 'none';
+            } else {
+                csBtn.classList.add('active');
+                brBtn.classList.remove('active');
+                csPanel.style.display = 'block';
+                brPanel.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

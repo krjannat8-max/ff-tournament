@@ -1,0 +1,17 @@
+{
+  "name": "FF Tournament Pro",
+  "short_name": "FF PRO",
+  "description": "Premium Free Fire Tournament Platform",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#05070a",
+  "theme_color": "#ff4b2b",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

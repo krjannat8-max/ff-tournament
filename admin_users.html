@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-container { padding: 20px; }
+        .user-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info { font-size: 0.85rem; }
+        .login-btn {
+            background: var(--cyber-blue);
+            color: black;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .deduct-btn {
+            background: #ff4b2b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 0.75rem;
+        }
+        .add-btn-sm {
+            background: var(--accent-green);
+            color: black;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 0.75rem;
+        }
+        .pass-text { color: var(--accent-yellow); font-family: monospace; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <a href="admin.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
+        <div class="logo">USER MANAGEMENT</div>
+        <div></div>
+    </header>
+
+    <div class="admin-container">
+        <div id="users-list">
+            <!-- Users will be injected here -->
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Admin Check
+        if (!auth.currentUser || !auth.currentUser.isAdmin) location.href = 'index.html';
+
+        function loadUsers() {
+            const list = document.getElementById('users-list');
+            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+
+            if (users.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:50px;">No registered users</p>`;
+                return;
+            }
+
+            list.innerHTML = users.map(user => `
+                <div class="user-card">
+                    <div class="user-info">
+                        <div style="font-weight:bold; font-size:1rem; margin-bottom:5px;">${user.name}</div>
+                        <div>Email: <span style="color:white;">${user.email}</span></div>
+                        <div>Password: <span class="pass-text">${user.password}</span></div>
+                        <div>Balance: <span style="color:var(--accent-green);">৳ ${Number(user.balance || 0).toFixed(2)}</span></div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <button class="login-btn" onclick="loginAsUser('${user.email}')">Login</button>
+                        <div style="display:flex;">
+                            <button class="add-btn-sm" onclick="adjustBalance('${user.email}', 'add')"><i class="fas fa-plus"></i></button>
+                            <button class="deduct-btn" onclick="adjustBalance('${user.email}', 'deduct')"><i class="fas fa-minus"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function adjustBalance(email, type) {
+            const amountStr = prompt(`Enter amount to ${type === 'add' ? 'add to' : 'deduct from'} balance:`);
+            const amount = parseFloat(amountStr);
+            
+            if (isNaN(amount) || amount <= 0) return;
+
+            let users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            const userIndex = users.findIndex(u => u.email === email);
+            
+            if (userIndex !== -1) {
+                const currentBal = Number(users[userIndex].balance || 0);
+                
+                const proceedWithAdjustment = (finalAmount) => {
+                    if (type === 'add') {
+                        users[userIndex].balance = currentBal + finalAmount;
+                    } else {
+                        users[userIndex].balance = Math.max(0, currentBal - finalAmount);
+                    }
+
+                    localStorage.setItem('ff_users', JSON.stringify(users));
+                    
+                    if (auth.currentUser && auth.currentUser.email === email) {
+                        auth.syncUser ? auth.syncUser() : auth.syncBalance();
+                    }
+
+                    showToast(`Balance ${type === 'add' ? 'Added' : 'Deducted'} Successfully!`, "success");
+                    loadUsers();
+                };
+
+                if (type === 'deduct' && currentBal < amount) {
+                    showCustomConfirm(`User only has ৳ ${currentBal}. Deduct full amount anyway?`, "OVERCHARGE WARNING", () => {
+                        proceedWithAdjustment(currentBal);
+                    });
+                } else {
+                    proceedWithAdjustment(amount);
+                }
+            }
+        }
+
+        function loginAsUser(email) {
+            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            const user = users.find(u => u.email === email);
+            if (user) {
+                auth.currentUser = user;
+                localStorage.setItem('ff_user', JSON.stringify(user));
+                showToast(`Logged in as ${user.name}`, "success");
+                setTimeout(() => location.href = 'index.html', 1000);
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>

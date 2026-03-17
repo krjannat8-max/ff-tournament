@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF Tournament Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff4b2b">
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <header class="app-header">
+        <div class="logo">FF PRO</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="rules-badge" onclick="location.href='rules.html'" style="background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--glass-border); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-book" style="color: var(--cyber-blue); font-size: 0.9rem;"></i>
+                <span style="font-size: 0.8rem; font-weight: 800; color: white;">RULES</span>
+            </div>
+            <div class="wallet-badge" onclick="location.href='wallet.html'">
+                <i class="fas fa-wallet" style="color: var(--accent-yellow);"></i>
+                <span id="header-balance">৳ 0.00</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Home View -->
+        <div id="home-view">
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <h2>PRO TOURNAMENTS</h2>
+                    <p>Join and Win Big Prizes Daily!</p>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <i class="fas fa-th-large"></i>
+                <span>GAME CATEGORIES</span>
+            </div>
+
+            <div class="categories-container">
+                <div class="category-card" onclick="filterMatches('BR')">
+                    <div class="cat-bg" style="background-image: url('assets/br_custom_banner.jpg');"></div>
+                    <div class="cat-overlay">
+                        <div class="cat-title">BR CUSTOM</div>
+                        <div class="cat-count">0 matches found</div>
+                    </div>
+                </div>
+                
+                <div class="category-card" onclick="filterMatches('SURVIVAL')">
+                    <div class="cat-bg" style="background-image: url('assets/cs_2vs2_banner.jpg');"></div>
+                    <div class="cat-overlay">
+                        <div class="cat-title">CS 2 vs 2</div>
+                        <div class="cat-count">0 matches found</div>
+                    </div>
+                </div>
+
+                <div class="category-card" onclick="filterMatches('LONE_WOLF')">
+                    <div class="cat-bg" style="background-image: url('assets/lonewolf_banner.jpg');"></div>
+                    <div class="cat-overlay">
+                        <div class="cat-title">LONE WOLF</div>
+                        <div class="cat-count">0 matches found</div>
+                    </div>
+                </div>
+
+                <div class="category-card" onclick="filterMatches('CS_4V4')">
+                    <div class="cat-bg" style="background-image: url('assets/cs_4vs4_banner.jpg');"></div>
+                    <div class="cat-overlay">
+                        <div class="cat-title">CS 4 vs 4</div>
+                        <div class="cat-count">0 matches found</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Category View (Sub-page) -->
+        <div id="category-view" style="display: none;">
+            <div class="subpage-header">
+                <button class="back-link" onclick="showHome()"><i class="fas fa-arrow-left"></i> Back to Home</button>
+                <div id="category-title-display" class="section-title" style="margin: 0; padding: 10px 0;">BR CUSTOM</div>
+            </div>
+            <div id="matches-list">
+                <!-- Filtered Matches will be injected here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Game ID Modal -->
+    <div id="game-id-modal" class="custom-modal-overlay" style="display: none;">
+        <div class="custom-modal-content glass">
+            <h3 style="color: var(--primary-color); text-transform: uppercase; font-family: 'Space Grotesk', sans-serif; letter-spacing: 2px; text-shadow: var(--neon-glow); margin-bottom: 5px;">JOIN MATCH</h3>
+            <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px;">Please enter your Free Fire In-Game Name / UID to join.</p>
+            
+            <input type="text" id="modal-ign-input" class="modal-input" placeholder="Enter Game ID or UID..." autocomplete="off">
+            
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button class="modal-btn cancel-btn" onclick="closeGameIdModal()">CANCEL</button>
+                <button class="modal-btn confirm-btn" onclick="confirmJoinMatch()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <i class="fas fa-gamepad"></i>
+            <span>Play</span>
+        </a>
+        <a href="matches.html" class="nav-item">
+            <i class="fas fa-list-ul"></i>
+            <span>My Matches</span>
+        </a>
+        <a href="results.html" class="nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Results</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script src="auth.js"></script>
+    <script src="wallet.js"></script>
+    <script src="matches.js"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('SW Registration Failed', err));
+        }
+    </script>
+</body>
+</html>
