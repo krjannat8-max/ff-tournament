@@ -67,6 +67,23 @@ function getMatches() {
     return m ? JSON.parse(m) : [];
 }
 
+function formatMatchTime(timestamp) {
+    const date = new Date(timestamp);
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const strMinutes = minutes < 10 ? '0' + minutes : minutes;
+    return hours + ':' + strMinutes + ' ' + ampm;
+}
+
+function formatMatchDate(timestamp) {
+    const date = new Date(timestamp);
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
 function generateMatchCard(match) {
     const filled = Number(match.filledSpots) || 0;
     const total = Number(match.totalSpots) || 48;
@@ -115,7 +132,7 @@ function generateMatchCard(match) {
         <div class="match-card glass">
             <div class="match-header">
                 <span style="font-weight: 800; font-size: 0.95rem; color: var(--primary-color);">${match.title}</span>
-                <span style="font-size: 0.7rem; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">3/15/2026</span>
+                <span style="font-size: 0.7rem; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; color: var(--accent-yellow);"><i class="far fa-calendar-alt"></i> ${formatMatchDate(match.startTime)}</span>
             </div>
             <div class="match-body">
                 <div class="info-grid">
@@ -157,8 +174,11 @@ function generateMatchCard(match) {
 
                 ${roomInfoHtml}
 
-                <div class="match-footer">
-                    <div class="status-tag" id="timer-${match.id}">STARTS IN - ...</div>
+                <div class="match-footer" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <div style="font-size: 0.8rem; font-weight: 800; color: white;"><i class="far fa-clock"></i> ${formatMatchTime(match.startTime)}</div>
+                        <div class="status-tag" id="timer-${match.id}" style="font-size: 0.65rem; margin: 0; background: none; border: none; padding: 0;">STARTS IN - ...</div>
+                    </div>
                     
                     ${isJoined ? `
                         <button class="btn-premium" style="background: var(--accent-green); color: black;" disabled>
