@@ -1,3 +1,19 @@
+/* EmailJS Configuration - Get these from https://www.emailjs.com/ */
+const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";   // [REQUIRED] Replace with your Public Key
+const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";   // [REQUIRED] Replace with your Service ID
+const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; // [REQUIRED] Replace with your Template ID
+
+// Device ID Logic
+if (!localStorage.getItem('ff_device_id')) {
+    localStorage.setItem('ff_device_id', 'dev_' + Math.random().toString(36).substr(2, 9));
+}
+const CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
+
+// Initialize EmailJS if the SDK is loaded
+if (typeof emailjs !== 'undefined') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
 const auth = {
     // Session management
     currentUser: JSON.parse(localStorage.getItem('ff_user')) || null,
@@ -16,7 +32,10 @@ const auth = {
             myMatches: [], 
             ignMap: {}, 
             wins: 0,
-            isAdmin: false 
+            isAdmin: false,
+            isBanned: false,
+            profilePic: null,
+            lastDeviceId: CURRENT_DEVICE_ID
         };
         users.push(newUser);
         localStorage.setItem('ff_users', JSON.stringify(users));
@@ -42,13 +61,37 @@ const auth = {
         const user = users.find(u => u.email === emailOrId && u.password === password);
         
         if (user) {
+            // Check if user is banned
+            if (user.isBanned) {
+                return { success: false, message: "Your account has been banned! Contact support." };
+            }
+
+            // Check if device is banned
+            const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+            if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
+                return { success: false, message: "This device has been banned from the platform." };
+            }
+
+            // Update device ID for user
+            user.lastDeviceId = CURRENT_DEVICE_ID;
+            
             // Ensure old users get new fields
             if (!user.myMatches) user.myMatches = [];
             if (!user.ignMap) user.ignMap = {};
             if (user.wins === undefined) user.wins = 0;
+            if (user.isBanned === undefined) user.isBanned = false;
             
             this.currentUser = user;
             localStorage.setItem('ff_user', JSON.stringify(user));
+            
+            // Sync this update back to main user list
+            const usersList = JSON.parse(localStorage.getItem('ff_users')) || [];
+            const idx = usersList.findIndex(u => u.email === user.email);
+            if (idx !== -1) {
+                usersList[idx] = user;
+                localStorage.setItem('ff_users', JSON.stringify(usersList));
+            }
+
             return { success: true, message: "Login successful!" };
         }
         return { success: false, message: "Invalid credentials!" };
@@ -94,12 +137,78 @@ const auth = {
     },
 
     checkAuth() {
-        if (!this.currentUser && !window.location.href.includes('login.html')) {
-            window.location.href = 'login.html';
+        // 1. Check Device Ban (Global)
+        const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+        if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
+            if (!window.location.href.includes('banned.html')) {
+                window.location.href = 'banned.html';
+            }
+            return;
+        }
+
+        // 2. Check User Session & User Ban
+        if (!this.currentUser) {
+            if (!window.location.href.includes('login.html') && !window.location.href.includes('banned.html')) {
+                window.location.href = 'login.html';
+            }
+        } else {
+            // Check if current user was just banned
+            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            const user = users.find(u => u.email === this.currentUser.email);
+            if (user && user.isBanned) {
+                this.logout();
+                window.location.href = 'banned.html?type=account';
+            }
         }
     },
 
-    // Verification System (Mock)
+    // Administrative Actions
+    toggleUserBan(email) {
+        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        const idx = users.findIndex(u => u.email === email);
+        if (idx !== -1) {
+            users[idx].isBanned = !users[idx].isBanned;
+            localStorage.setItem('ff_users', JSON.stringify(users));
+            return { success: true, banned: users[idx].isBanned };
+        }
+        return { success: false };
+    },
+
+    toggleDeviceBan(email) {
+        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        const user = users.find(u => u.email === email);
+        if (!user || !user.lastDeviceId) return { success: false, message: "Device not found" };
+
+        let bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+        const devId = user.lastDeviceId;
+        let isBanned = false;
+
+        if (bannedDevices.includes(devId)) {
+            bannedDevices = bannedDevices.filter(id => id !== devId);
+            isBanned = false;
+        } else {
+            bannedDevices.push(devId);
+            isBanned = true;
+        }
+
+        localStorage.setItem('ff_banned_devices', JSON.stringify(bannedDevices));
+        return { success: true, banned: isBanned };
+    },
+
+    updateProfilePic(picBase64) {
+        if (!this.currentUser) return;
+        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        const idx = users.findIndex(u => u.email === this.currentUser.email);
+        if (idx !== -1) {
+            users[idx].profilePic = picBase64;
+            localStorage.setItem('ff_users', JSON.stringify(users));
+            this.syncUser();
+            return true;
+        }
+        return false;
+    },
+
+    // Verification System (Real Email via EmailJS)
     sendVerificationCode(email, type = 'signup') {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiry = Date.now() + 5 * 60000; // 5 mins
@@ -107,14 +216,37 @@ const auth = {
         const verificationData = { code, email, expiry, type };
         localStorage.setItem(`ff_verify_${email}`, JSON.stringify(verificationData));
         
-        console.log(`[MOCK EMAIL] To: ${email} | Subject: Verify your account | Code: ${code}`);
+        // Show Toast immediately so the user knows something is happening
+        showToast(`Sending verification code to ${email}...`, "info");
         
-        // In a real app, this would call an API. 
-        // For this demo, we'll show it in a professional toast with the code for testing.
-        showToast(`Verification code [${code}] sent to ${email}`, "success");
+        // Prepare Email Template Parameters
+        const templateParams = {
+            to_email: email,
+            app_name: "FF Tournament Pro",
+            code: code,
+            type: type === 'signup' ? "Registration" : "Password Recovery"
+        };
+
+        // Send Email via EmailJS
+        if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                .then(() => {
+                    showToast(`Code sent successfully to ${email}!`, "success");
+                    console.log(`[EmailJS] Success: Code ${code} sent to ${email}`);
+                })
+                .catch((error) => {
+                    console.error("[EmailJS] Failed to send email:", error);
+                    showToast("Failed to send email. Please check your EmailJS configuration.", "error");
+                    // Fallback for testing: Show code in toast if EmailJS is not configured properly
+                    showToast(`[TEST MODE] Your code is: ${code}`, "warning");
+                });
+        } else {
+            // Fallback for when EmailJS is not yet configured by the user
+            console.warn("[AUTH] EmailJS not configured. Falling back to Mock mode.");
+            showToast(`[CONFIG REQUIRED] Your code is: ${code}`, "warning");
+            console.log(`[MOCK EMAIL] To: ${email} | Code: ${code}`);
+        }
         
-        // For testing convenience, we'll also log it clearly or maybe show a hint if the user is the dev.
-        // I'll just show the code in the console as per standard mock practices.
         return { success: true, debugCode: code }; 
     },
 

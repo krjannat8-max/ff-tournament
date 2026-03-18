@@ -81,23 +81,57 @@
                 return;
             }
 
-            list.innerHTML = users.map(user => `
-                <div class="user-card">
-                    <div class="user-info">
-                        <div style="font-weight:bold; font-size:1rem; margin-bottom:5px;">${user.name}</div>
-                        <div>Email: <span style="color:white;">${user.email}</span></div>
-                        <div>Password: <span class="pass-text">${user.password}</span></div>
-                        <div>Balance: <span style="color:var(--accent-green);">৳ ${Number(user.balance || 0).toFixed(2)}</span></div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:5px;">
-                        <button class="login-btn" onclick="loginAsUser('${user.email}')">Login</button>
-                        <div style="display:flex;">
-                            <button class="add-btn-sm" onclick="adjustBalance('${user.email}', 'add')"><i class="fas fa-plus"></i></button>
-                            <button class="deduct-btn" onclick="adjustBalance('${user.email}', 'deduct')"><i class="fas fa-minus"></i></button>
+            list.innerHTML = users.map(user => {
+                const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+                const isDeviceBanned = user.lastDeviceId && bannedDevices.includes(user.lastDeviceId);
+                
+                return `
+                    <div class="user-card" style="${user.isBanned ? 'border-color: #ff4b2b; background: rgba(255, 75, 43, 0.05);' : ''}">
+                        <div class="user-info">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+                                <div style="font-weight:bold; font-size:1rem;">${user.name}</div>
+                                ${user.isBanned ? '<span style="background:#ff4b2b; color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px;">BANNED</span>' : ''}
+                                ${isDeviceBanned ? '<span style="background:#cc0000; color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px;">DEVICE BANNED</span>' : ''}
+                            </div>
+                            <div>Email: <span style="color:white;">${user.email}</span></div>
+                            <div>Password: <span class="pass-text">${user.password}</span></div>
+                            <div>Balance: <span style="color:var(--accent-green);">৳ ${Number(user.balance || 0).toFixed(2)}</span></div>
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:5px;">Last Device: ${user.lastDeviceId || 'Unknown'}</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <button class="login-btn" onclick="loginAsUser('${user.email}')">Login</button>
+                            <div style="display:flex; gap:5px;">
+                                <button class="add-btn-sm" onclick="adjustBalance('${user.email}', 'add')" title="Add Balance"><i class="fas fa-plus"></i></button>
+                                <button class="deduct-btn" onclick="adjustBalance('${user.email}', 'deduct')" title="Deduct Balance"><i class="fas fa-minus"></i></button>
+                            </div>
+                            <button class="deduct-btn" style="background:#666;" onclick="handleToggleBan('${user.email}')">
+                                <i class="fas fa-user-slash"></i> ${user.isBanned ? 'Unban' : 'Ban User'}
+                            </button>
+                            <button class="deduct-btn" style="background:#000;" onclick="handleToggleDeviceBan('${user.email}')">
+                                <i class="fas fa-laptop-code"></i> ${isDeviceBanned ? 'Unban Dev' : 'Ban Device'}
+                            </button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        function handleToggleBan(email) {
+            const res = auth.toggleUserBan(email);
+            if (res.success) {
+                showToast(res.banned ? "User Banned Successfully!" : "User Unbanned!", "success");
+                loadUsers();
+            }
+        }
+
+        function handleToggleDeviceBan(email) {
+            const res = auth.toggleDeviceBan(email);
+            if (res.success) {
+                showToast(res.banned ? "Device Banned Successfully!" : "Device Unbanned!", "success");
+                loadUsers();
+            } else {
+                showToast(res.message || "Failed to toggle device ban", "error");
+            }
         }
 
         function adjustBalance(email, type) {

@@ -42,7 +42,26 @@
             font-size: 3rem;
             color: #a0a0a0;
             border: 2px solid var(--glass-border);
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
         }
+        .avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-edit-hint {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 0;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .avatar-circle:hover .avatar-edit-hint { opacity: 1; }
         .user-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
         .user-email { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 25px; }
         
@@ -90,9 +109,13 @@
     </header>
 
     <div class="profile-info">
-        <div class="avatar-circle">
-            <i class="fas fa-user"></i>
+        <div class="avatar-circle" onclick="document.getElementById('photo-input').click()">
+            <div id="disp-avatar-content">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="avatar-edit-hint">EDIT</div>
         </div>
+        <input type="file" id="photo-input" hidden accept="image/*" onchange="handlePhotoUpload(this)">
         <div class="user-name" id="disp-name">Loading...</div>
         <div class="user-email" id="disp-email">email@example.com</div>
 
@@ -183,9 +206,36 @@
                 document.getElementById('disp-username').innerText = u.name || 'User';
                 document.getElementById('disp-balance').innerText = `৳ ${Number(u.balance || 0).toFixed(2)}`;
                 document.getElementById('disp-played').innerText = u.myMatches ? u.myMatches.length : 0;
-                document.getElementById('disp-type').innerText = u.isAdmin ? 'Admin' : 'Premium Player';
+                document.getElementById('disp-type').innerText = u.isAdmin ? 'Admin' : 'Esports Player';
+
+                // Profile Pic
+                const avatarContent = document.getElementById('disp-avatar-content');
+                if (u.profilePic) {
+                    avatarContent.innerHTML = `<img src="${u.profilePic}" alt="Profile">`;
+                } else {
+                    avatarContent.innerHTML = `<i class="fas fa-user"></i>`;
+                }
             }
         });
+
+        function handlePhotoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                return showToast("Image too large! Max 2MB.", "error");
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                if (auth.updateProfilePic(base64)) {
+                    showToast("Profile Picture Updated!", "success");
+                    document.getElementById('disp-avatar-content').innerHTML = `<img src="${base64}" alt="Profile">`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     </script>
 </body>
 </html>

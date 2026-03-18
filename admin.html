@@ -72,6 +72,66 @@
             color: #ff5555;
             cursor: pointer;
         }
+
+        /* Participant Modal Styles */
+        #participants-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .participants-content {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .participant-item {
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid var(--cyber-blue);
+        }
+
+        .view-participants-btn {
+            background: rgba(255, 171, 0, 0.1);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 171, 0, 0.3);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .view-participants-btn:hover {
+            background: var(--accent-yellow);
+            color: black;
+        }
     </style>
 </head>
 
@@ -223,6 +283,9 @@
                             UPDATE ROOM
                         </button>
                     </div>
+                    <button class="view-participants-btn" onclick="viewParticipants(${m.id})">
+                        <i class="fas fa-users"></i> VIEW PARTICIPANTS (${m.filledSpots || 0}/${m.totalSpots})
+                    </button>
                 </div>
             `).join('');
         }
@@ -293,6 +356,42 @@
             }
         }
 
+        function viewParticipants(matchId) {
+            const modal = document.getElementById('participants-modal');
+            const list = document.getElementById('participants-list');
+            const title = document.getElementById('participants-match-title');
+            
+            const matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            const match = matches.find(m => m.id === matchId);
+            if (title && match) title.innerText = match.title;
+
+            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            const participants = users.filter(u => u.myMatches && u.myMatches.includes(matchId));
+
+            if (participants.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">No participants joined yet.</div>`;
+            } else {
+                list.innerHTML = participants.map(u => `
+                    <div class="participant-item">
+                        <div>
+                            <div style="font-weight:700; font-size:0.9rem;">${u.name}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim);">${u.email}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.6rem; color:var(--accent-yellow); font-weight:800; text-transform:uppercase;">GAME ID</div>
+                            <div style="font-family:monospace; color:var(--cyber-blue); font-weight:900; font-size:1rem;">${u.ignMap ? u.ignMap[matchId] : 'UNKNOWN'}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeParticipantsModal() {
+            document.getElementById('participants-modal').style.display = 'none';
+        }
+
         function saveBkashNumber() {
             const num = document.getElementById('admin-bkash-num').value;
             if(!num) return showToast("Please enter a valid number", "error");
@@ -318,6 +417,26 @@
 
         loadAdminMatches();
     </script>
+    
+    <!-- Participants Modal -->
+    <div id="participants-modal">
+        <div class="participants-content glass">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h3 style="color: var(--accent-yellow); margin:0;">PARTICIPANTS</h3>
+                    <div id="participants-match-title" style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">Tournament Name</div>
+                </div>
+                <i class="fas fa-times" style="cursor:pointer; font-size:1.2rem; color:var(--text-dim);" onclick="closeParticipantsModal()"></i>
+            </div>
+            
+            <div id="participants-list">
+                <!-- Participants will be injected here -->
+            </div>
+            
+            <button class="add-btn" style="margin-top: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white;" 
+                    onclick="closeParticipantsModal()">CLOSE</button>
+        </div>
+    </div>
 </body>
 
 </html>

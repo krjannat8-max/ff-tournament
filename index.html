@@ -134,9 +134,34 @@
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
+            let refreshing = false;
+
+            // Register Service Worker
             navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('Service Worker Registered'))
+                .then(reg => {
+                    console.log('Service Worker Registered');
+                    
+                    // Listen for updates
+                    reg.onupdatefound = () => {
+                        const newSW = reg.installing;
+                        newSW.onstatechange = () => {
+                            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New update available!
+                                showToast("New Update Applied! Refreshing...", "success");
+                                setTimeout(() => window.location.reload(), 1500);
+                            }
+                        };
+                    };
+                })
                 .catch(err => console.log('SW Registration Failed', err));
+
+            // Reload when the service worker changes
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
+            });
         }
     </script>
 </body>
