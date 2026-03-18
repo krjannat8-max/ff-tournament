@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ff-pro-v4'; // Increment this whenever you update the app
+const CACHE_NAME = 'ff-pro-v5'; // Increment this whenever you update the app
 const ASSETS = [
     './',
     './index.html',
