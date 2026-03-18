@@ -134,12 +134,13 @@
     <script src="matches.js"></script>
     <script src="app.js"></script>
     <script>
-        // Particle Effect for Hero Banner
+        // Official Constellation Particle Effect
         (function() {
             const canvas = document.getElementById('hero-particles');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             let particles = [];
+            let mouse = { x: null, y: null, radius: 100 };
             
             function resize() {
                 canvas.width = canvas.offsetWidth;
@@ -148,6 +149,12 @@
             window.addEventListener('resize', resize);
             resize();
 
+            window.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - rect.left;
+                mouse.y = e.clientY - rect.top;
+            });
+
             class Particle {
                 constructor() {
                     this.init();
@@ -155,29 +162,65 @@
                 init() {
                     this.x = Math.random() * canvas.width;
                     this.y = Math.random() * canvas.height;
-                    this.size = Math.random() * 1.5 + 0.5;
-                    this.speedX = Math.random() * 0.4 - 0.2;
-                    this.speedY = Math.random() * 0.4 - 0.2;
-                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.baseX = this.x;
+                    this.baseY = this.y;
+                    this.size = Math.random() * 1.5 + 1;
+                    this.vx = Math.random() * 0.6 - 0.3;
+                    this.vy = Math.random() * 0.6 - 0.3;
+                    this.color = Math.random() > 0.5 ? '#00f2ff' : '#ff4b2b';
                 }
                 update() {
-                    this.x += this.speedX;
-                    this.y += this.speedY;
-                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                    // Mouse interaction
+                    if (mouse.x) {
+                        let dx = mouse.x - this.x;
+                        let dy = mouse.y - this.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < mouse.radius) {
+                            this.x -= dx / 20;
+                            this.y -= dy / 20;
+                        }
+                    }
                 }
                 draw() {
-                    ctx.fillStyle = `rgba(0, 242, 255, ${this.opacity})`;
+                    ctx.fillStyle = this.color;
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                     ctx.fill();
-                    // Subtle glow
-                    ctx.shadowBlur = 5;
-                    ctx.shadowColor = "rgba(0, 242, 255, 0.5)";
                 }
             }
 
-            for (let i = 0; i < 40; i++) particles.push(new Particle());
+            function initParticles() {
+                particles = [];
+                let count = (canvas.width * canvas.height) / 8000;
+                for (let i = 0; i < Math.min(count, 80); i++) {
+                    particles.push(new Particle());
+                }
+            }
+            initParticles();
+
+            function connect() {
+                for (let a = 0; a < particles.length; a++) {
+                    for (let b = a; b < particles.length; b++) {
+                        let dx = particles[a].x - particles[b].x;
+                        let dy = particles[a].y - particles[b].y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        let opacity = 1 - (distance / 80);
+                        if (distance < 80) {
+                            ctx.strokeStyle = `rgba(0, 242, 255, ${opacity * 0.3})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[a].x, particles[a].y);
+                            ctx.lineTo(particles[b].x, particles[b].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
 
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -185,6 +228,7 @@
                     p.update();
                     p.draw();
                 });
+                connect();
                 requestAnimationFrame(animate);
             }
             animate();
