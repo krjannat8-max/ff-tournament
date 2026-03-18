@@ -14,7 +14,7 @@
     <div id="toast-container"></div>
 
     <header class="app-header">
-        <div class="logo">FF PRO</div>
+        <div class="logo" style="font-size: 0.8rem; letter-spacing: 0px; white-space: nowrap;">Bangladesh Mobile Trunament Official</div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="rules-badge" onclick="location.href='rules.html'" style="background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--glass-border); cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-book" style="color: var(--cyber-blue); font-size: 0.9rem;"></i>
@@ -31,8 +31,9 @@
         <!-- Home View -->
         <div id="home-view">
             <div class="hero-banner">
+                <canvas id="hero-particles" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index:1;"></canvas>
                 <div class="hero-content">
-                    <h2>PRO TOURNAMENTS</h2>
+                    <h2>Bangladesh Trunament</h2>
                     <p>Join and Win Big Prizes Daily!</p>
                 </div>
             </div>
@@ -133,6 +134,62 @@
     <script src="matches.js"></script>
     <script src="app.js"></script>
     <script>
+        // Particle Effect for Hero Banner
+        (function() {
+            const canvas = document.getElementById('hero-particles');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            
+            function resize() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.init();
+                }
+                init() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 1.5 + 0.5;
+                    this.speedX = Math.random() * 0.4 - 0.2;
+                    this.speedY = Math.random() * 0.4 - 0.2;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(0, 242, 255, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Subtle glow
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = "rgba(0, 242, 255, 0.5)";
+                }
+            }
+
+            for (let i = 0; i < 40; i++) particles.push(new Particle());
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
         if ('serviceWorker' in navigator) {
             let refreshing = false;
 
