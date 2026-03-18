@@ -1,7 +1,7 @@
 {
-  "name": "FF Tournament Pro",
-  "short_name": "FF PRO",
-  "description": "Premium Free Fire Tournament Platform",
+  "name": "Bangladesh Mobile Tournament Official",
+  "short_name": "Tournament Pro",
+  "description": "Premium Free Fire Tournament Platform for Bangladesh",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#05070a",

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bangladesh Mobile Tournament Official - Join & Win!</title>
     <meta name="description" content="The official Free Fire tournament platform for mobile players in Bangladesh. Join BR, CS, and Lone Wolf matches daily and win big prizes.">
-    <meta name="keywords" content="Bangladesh Tournament, FF PRO, Free Fire Bangladesh, Mobile Tournament, ESports Bangladesh, FF PRO Official">
+    <meta name="keywords" content="Bangladesh Tournament, Tournament Official, Free Fire Bangladesh, Mobile Tournament, ESports Bangladesh, Tournament Official Official">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -17,34 +17,47 @@
     <meta property="og:image" content="assets/icon.png">
     <meta property="og:type" content="website">
 
-    <!-- JSON-LD Structured Data for Google (App SEO) -->
+    <!-- JSON-LD Structured Data for Google (App SEO & Sitelinks) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Bangladesh Mobile Tournament Official",
-      "operatingSystem": "ANDROID",
-      "applicationCategory": "GameApplication",
-      "downloadUrl": "https://krjannat8-max.github.io/ff-tournament/assets/ff-pro.apk",
-      "featureList": "Live Free Fire Tournaments, Daily Matches, Prize Pool, Real-time Results",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "1250"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Bangladesh Mobile Tournament Official",
+        "url": "https://krjannat8-max.github.io/ff-tournament/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://krjannat8-max.github.io/ff-tournament/matches.html?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
       },
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "BDT"
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Bangladesh Mobile Tournament Official",
+        "operatingSystem": "ANDROID",
+        "applicationCategory": "GameApplication",
+        "downloadUrl": "https://krjannat8-max.github.io/ff-tournament/assets/ff-pro.apk",
+        "featureList": "Live Free Fire Tournaments, Daily Matches, Prize Pool, Real-time Results",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "1250"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "BDT"
+        }
       }
-    }
+    ]
     </script>
 </head>
 <body>
     <div id="toast-container"></div>
 
     <header class="app-header">
-        <div class="logo" style="font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; text-shadow: 0 0 10px rgba(255, 75, 43, 0.3);">Bangladesh Mobile Trunament Official</div>
+        <div class="logo" style="font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; text-shadow: 0 0 10px rgba(255, 75, 43, 0.3);">Bangladesh Mobile Tournament Official</div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="rules-badge" onclick="window.open('assets/ff-pro.apk')" style="background: rgba(0, 242, 255, 0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--cyber-blue); cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-download" style="color: var(--cyber-blue); font-size: 0.9rem;"></i>
@@ -67,7 +80,7 @@
             <div class="hero-banner">
                 <canvas id="hero-particles" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index:1;"></canvas>
                 <div class="hero-content">
-                    <h2>Bangladesh Trunament</h2>
+                    <h2>Bangladesh Tournament</h2>
                     <p>Join and Win Big Prizes Daily!</p>
                 </div>
             </div>
