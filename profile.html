@@ -168,6 +168,23 @@
                 <i class="fas fa-chevron-right" style="color: var(--text-dim);"></i>
             </a>
         </div>
+
+        <!-- Helpline Section -->
+        <h4 style="text-align: left; margin: 30px 20px 15px; color: var(--text-main); font-size: 1.1rem;">Support</h4>
+        <div class="details-card" style="padding: 0; overflow: hidden; margin: 0 15px 100px;">
+            <a href="https://wa.me/+8801746579199" target="_blank" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: white;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 45px; height: 45px; background: rgba(37, 211, 102, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #25D366;">
+                        <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1rem;">Helpline (WhatsApp)</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">Chat with Hasan Bhai for support</div>
+                    </div>
+                </div>
+                <i class="fas fa-external-link-alt" style="color: var(--text-dim);"></i>
+            </a>
+        </div>
     </div>
 
     <nav class="bottom-nav">
@@ -223,24 +240,28 @@
             }
         });
 
-        function handlePhotoUpload(input) {
-            const file = input.files[0];
+        window.handlePhotoUpload = function(input) {
+            var file = input.files[0];
             if (!file) return;
 
             if (file.size > 2 * 1024 * 1024) {
                 return showToast("Image too large! Max 2MB.", "error");
             }
 
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64 = e.target.result;
-                if (await auth.updateProfilePic(base64)) {
-                    showToast("Profile Picture Updated!", "success");
-                    document.getElementById('disp-avatar-content').innerHTML = `<img src="${base64}" alt="Profile">`;
-                }
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var base64 = e.target.result;
+                auth.updateProfilePic(base64).then(function(success) {
+                    if (success) {
+                        showToast("Profile Picture Updated!", "success");
+                        document.getElementById('disp-avatar-content').innerHTML = '<img src="' + base64 + '" alt="Profile">';
+                    } else {
+                        showToast("Failed to update profile pic.", "error");
+                    }
+                });
             };
             reader.readAsDataURL(file);
-        }
+        };
     </script>
 </body>
 </html>
