@@ -251,67 +251,90 @@
         }
 
         function loadAdminMatches() {
-            const list = document.getElementById('admin-match-list');
-            const matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            var list = document.getElementById('admin-match-list');
             
-            // Load Settings
-            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
-            if (settings.bkashNumber) {
-                const bInput = document.getElementById('admin-bkash-num');
-                if (bInput) bInput.value = settings.bkashNumber;
-            }
-            if (settings.rules_br) {
-                const brText = document.getElementById('admin-rules-br');
-                if (brText) brText.value = settings.rules_br;
-            }
-            if (settings.rules_cs) {
-                const csText = document.getElementById('admin-rules-cs');
-                if (csText) csText.value = settings.rules_cs;
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                // Real-time listener for Settings
+                db.collection('settings').doc('general').onSnapshot(function(doc) {
+                    if (doc.exists) {
+                        var settings = doc.data();
+                        if (settings.bkashNumber) document.getElementById('admin-bkash-num').value = settings.bkashNumber;
+                        if (settings.rules_br) document.getElementById('admin-rules-br').value = settings.rules_br;
+                        if (settings.rules_cs) document.getElementById('admin-rules-cs').value = settings.rules_cs;
+                    }
+                });
+
+                // Real-time listener for Matches
+                db.collection('matches').orderBy('startTime', 'desc').onSnapshot(function(snapshot) {
+                    var matches = [];
+                    snapshot.forEach(function(doc) {
+                        var data = doc.data();
+                        data.id = doc.id;
+                        matches.push(data);
+                    });
+                    renderAdminMatchesUI(matches);
+                });
+                return;
             }
 
-            list.innerHTML = matches.map(m => `
-                <div class="match-list-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight:bold;">${m.title}</div>
-                            <div style="font-size:0.7rem; color:var(--text-dim);">${m.type} - ৳${m.fee} FEE</div>
+            var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            if (settings.bkashNumber) document.getElementById('admin-bkash-num').value = settings.bkashNumber;
+            if (settings.rules_br) document.getElementById('admin-rules-br').value = settings.rules_br;
+            if (settings.rules_cs) document.getElementById('admin-rules-cs').value = settings.rules_cs;
+            renderAdminMatchesUI(matches);
+        }
+
+        function renderAdminMatchesUI(matches) {
+            var list = document.getElementById('admin-match-list');
+            if (!list) return;
+            
+            list.innerHTML = matches.map(function(m) {
+                var isFirebase = (typeof m.id === 'string');
+                var displayId = isFirebase ? "'" + m.id + "'" : m.id;
+                
+                return `
+                    <div class="match-list-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight:bold;">${m.title}</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">${m.type} - ৳${m.entryFee} FEE</div>
+                            </div>
+                            <i class="fas fa-trash del-btn" onclick="deleteMatch(${displayId})"></i>
                         </div>
-                        <i class="fas fa-trash del-btn" onclick="deleteMatch(${m.id})"></i>
-                    </div>
-                    <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
-                        <input type="text" placeholder="Room ID" id="rid-${m.id}" value="${m.roomId || ''}" 
-                               style="width: 40%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
-                        <input type="text" placeholder="Pass" id="rpass-${m.id}" value="${m.roomPass || ''}" 
-                               style="width: 25%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
-                        <button onclick="updateRoomInfo(${m.id})" 
-                                style="flex-grow: 1; background: var(--cyber-blue); border: none; border-radius: 4px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
-                            UPDATE ROOM
+                        <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                            <input type="text" placeholder="Room ID" id="rid-${m.id}" value="${m.roomId || ''}" 
+                                   style="width: 40%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
+                            <input type="text" placeholder="Pass" id="rpass-${m.id}" value="${m.roomPass || ''}" 
+                                   style="width: 25%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 0.8rem;">
+                            <button onclick="updateRoomInfo(${displayId})" 
+                                    style="flex-grow: 1; background: var(--cyber-blue); border: none; border-radius: 4px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
+                                UPDATE ROOM
+                            </button>
+                        </div>
+                        <button class="view-participants-btn" onclick="viewParticipants(${displayId})">
+                            <i class="fas fa-users"></i> VIEW PARTICIPANTS (${m.filledSpots || 0}/${m.totalSpots})
                         </button>
                     </div>
-                    <button class="view-participants-btn" onclick="viewParticipants(${m.id})">
-                        <i class="fas fa-users"></i> VIEW PARTICIPANTS (${m.filledSpots || 0}/${m.totalSpots})
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function addMatch() {
-            const title = document.getElementById('m-title').value;
-            const type = document.getElementById('m-type').value;
-            const entryType = document.getElementById('m-entry-type').value;
-            const fee = parseInt(document.getElementById('m-fee').value);
-            const prize = parseInt(document.getElementById('m-prize').value);
-            const kill = parseInt(document.getElementById('m-kill').value);
-            const spots = parseInt(document.getElementById('m-spots').value);
-            const matchTimeValue = document.getElementById('m-time').value;
-            const roomId = document.getElementById('m-room-id').value;
-            const roomPass = document.getElementById('m-room-pass').value;
+            var title = document.getElementById('m-title').value;
+            var type = document.getElementById('m-type').value;
+            var entryType = document.getElementById('m-entry-type').value;
+            var fee = parseInt(document.getElementById('m-fee').value);
+            var prize = parseInt(document.getElementById('m-prize').value);
+            var kill = parseInt(document.getElementById('m-kill').value);
+            var spots = parseInt(document.getElementById('m-spots').value);
+            var matchTimeValue = document.getElementById('m-time').value;
+            var roomId = document.getElementById('m-room-id').value;
+            var roomPass = document.getElementById('m-room-pass').value;
 
             if (!title) return showToast("Title is required!", "error");
 
-            const matches = getMatches();
-            const newM = {
-                id: Date.now(),
+            var newM = {
                 title: title,
                 type: type,
                 entryType: entryType || "Solo",
@@ -327,19 +350,33 @@
                 roomPass: roomPass || ""
             };
 
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('matches').add(newM).then(function() {
+                    showToast("Tournament Added Globally!", "success");
+                    document.getElementById('m-title').value = '';
+                }).catch(function(e) { showToast("Global Add Failed", "error"); });
+                return;
+            }
+
+            var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            newM.id = Date.now();
             matches.push(newM);
             localStorage.setItem('ff_matches', JSON.stringify(matches));
             showToast("Tournament Added Successfully!", "success");
             loadAdminMatches();
-
-            // Clear title
             document.getElementById('m-title').value = '';
         }
 
         function deleteMatch(id) {
-            showCustomConfirm("Are you sure you want to delete this match? This action cannot be undone.", "DELETE MATCH", () => {
-                let matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
-                matches = matches.filter(m => m.id !== id);
+            showCustomConfirm("Are you sure you want to delete this match?", "DELETE MATCH", function() {
+                if (typeof useFirebase !== 'undefined' && useFirebase) {
+                    db.collection('matches').doc(String(id)).delete().then(function() {
+                        showToast("Global Deletion Successful", "success");
+                    });
+                    return;
+                }
+                var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+                matches = matches.filter(function(m) { return m.id !== id; });
                 localStorage.setItem('ff_matches', JSON.stringify(matches));
                 loadAdminMatches();
                 showToast("Match deleted successfully", "success");
@@ -347,11 +384,21 @@
         }
 
         function updateRoomInfo(id) {
-            const rid = document.getElementById(`rid-${id}`).value;
-            const rpass = document.getElementById(`rpass-${id}`).value;
+            var rid = document.getElementById("rid-" + id).value;
+            var rpass = document.getElementById("rpass-" + id).value;
             
-            let matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
-            const idx = matches.findIndex(m => m.id === id);
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('matches').doc(String(id)).update({
+                    roomId: rid,
+                    roomPass: rpass
+                }).then(function() {
+                    showToast("Room Info Updated Globally!", "success");
+                });
+                return;
+            }
+
+            var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
+            var idx = matches.findIndex(function(m) { return m.id === id; });
             
             if (idx !== -1) {
                 matches[idx].roomId = rid;
@@ -362,35 +409,45 @@
         }
 
         function viewParticipants(matchId) {
-            const modal = document.getElementById('participants-modal');
-            const list = document.getElementById('participants-list');
-            const title = document.getElementById('participants-match-title');
+            var modal = document.getElementById('participants-modal');
+            var list = document.getElementById('participants-list');
+            var title = document.getElementById('participants-match-title');
             
-            const matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
-            const match = matches.find(m => m.id === matchId);
-            if (title && match) title.innerText = match.title;
-
-            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-            const participants = users.filter(u => u.myMatches && u.myMatches.includes(matchId));
-
-            if (participants.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">No participants joined yet.</div>`;
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                list.innerHTML = '<div style="text-align:center; padding:30px;">Checking participants...</div>';
+                db.collection('users').where('myMatches', 'array-contains', matchId).get().then(function(snapshot) {
+                    var participants = [];
+                    snapshot.forEach(function(doc) { participants.push(doc.data()); });
+                    renderParticipantsUI(participants, matchId);
+                });
             } else {
-                list.innerHTML = participants.map(u => `
-                    <div class="participant-item">
-                        <div>
-                            <div style="font-weight:700; font-size:0.9rem;">${u.name}</div>
-                            <div style="font-size:0.7rem; color:var(--text-dim);">${u.email}</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:0.6rem; color:var(--accent-yellow); font-weight:800; text-transform:uppercase;">GAME ID</div>
-                            <div style="font-family:monospace; color:var(--cyber-blue); font-weight:900; font-size:1rem;">${u.ignMap ? u.ignMap[matchId] : 'UNKNOWN'}</div>
-                        </div>
-                    </div>
-                `).join('');
+                var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+                var participants = users.filter(function(u) { return u.myMatches && u.myMatches.indexOf(matchId) !== -1; });
+                renderParticipantsUI(participants, matchId);
             }
-
             modal.style.display = 'flex';
+        }
+
+        function renderParticipantsUI(participants, matchId) {
+            var list = document.getElementById('participants-list');
+            if (participants.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">No participants joined yet.</div>';
+            } else {
+                list.innerHTML = participants.map(function(u) {
+                    return `
+                        <div class="participant-item">
+                            <div>
+                                <div style="font-weight:700; font-size:0.9rem;">${u.name}</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">${u.email}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:0.6rem; color:var(--accent-yellow); font-weight:800; text-transform:uppercase;">GAME ID</div>
+                                <div style="font-family:monospace; color:var(--cyber-blue); font-weight:900; font-size:1rem;">${u.ignMap ? u.ignMap[matchId] || 'N/A' : 'N/A'}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         function closeParticipantsModal() {
@@ -398,25 +455,40 @@
         }
 
         function saveBkashNumber() {
-            const num = document.getElementById('admin-bkash-num').value;
+            var num = document.getElementById('admin-bkash-num').value;
             if(!num) return showToast("Please enter a valid number", "error");
             
-            let settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('settings').doc('general').set({ bkashNumber: num }, { merge: true }).then(function() {
+                    showToast("Global bKash Number Saved!", "success");
+                });
+                return;
+            }
+
+            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             settings.bkashNumber = num;
             localStorage.setItem('ff_settings', JSON.stringify(settings));
-            
             showToast("bKash Number Saved!", "success");
         }
 
         function saveRules() {
-            const brRules = document.getElementById('admin-rules-br').value;
-            const csRules = document.getElementById('admin-rules-cs').value;
+            var brRules = document.getElementById('admin-rules-br').value;
+            var csRules = document.getElementById('admin-rules-cs').value;
             
-            let settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('settings').doc('general').set({
+                    rules_br: brRules,
+                    rules_cs: csRules
+                }, { merge: true }).then(function() {
+                    showToast("Global Rules Saved!", "success");
+                });
+                return;
+            }
+
+            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             settings.rules_br = brRules;
             settings.rules_cs = csRules;
             localStorage.setItem('ff_settings', JSON.stringify(settings));
-            
             showToast("All Rules Saved Successfully!", "success");
         }
 

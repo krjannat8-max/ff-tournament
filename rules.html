@@ -145,10 +145,21 @@
         });
 
         function loadRulesData() {
-            const brContent = document.getElementById('rules-br-content');
-            const csContent = document.getElementById('rules-cs-content');
-            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            var brContent = document.getElementById('rules-br-content');
+            var csContent = document.getElementById('rules-cs-content');
             
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('settings').doc('general').onSnapshot(function(doc) {
+                    if (doc.exists) {
+                        var settings = doc.data();
+                        brContent.innerText = settings.rules_br || "No Battle Royale rules set.";
+                        csContent.innerText = settings.rules_cs || "No Clash Squad rules set.";
+                    }
+                });
+                return;
+            }
+
+            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             brContent.innerText = settings.rules_br || "No Battle Royale rules have been set yet.";
             csContent.innerText = settings.rules_cs || "No Clash Squad rules have been set yet.";
         }

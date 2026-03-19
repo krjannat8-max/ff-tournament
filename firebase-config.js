@@ -1,5 +1,5 @@
-// Firebase Configuration - Placeholder
-// Replace with the config Hasan Bhai provides
+// Firebase Configuration - REPLACE THE PLACEHOLDERS BELOW
+// Get this from: Firebase Console > Project Settings > General > Your Apps (Web App)
 var firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_AUTH_DOMAIN",
@@ -12,7 +12,10 @@ var firebaseConfig = {
 // Initialize Firebase
 if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
-    var db_config = firebase.firestore();
-    var auth_firebase_config = firebase.auth();
-    console.log("[Firebase] Initialized with placeholder config.");
+    
+    // EXPOSE GLOBALLY for use in matches.js, app.js, wallet.js etc.
+    window.db = firebase.firestore();
+    window.auth_firebase = firebase.auth();
+    
+    console.log("[Firebase] Centralized Database Initialized.");
 }

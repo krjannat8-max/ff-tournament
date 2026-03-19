@@ -62,15 +62,17 @@ if (!localStorage.getItem('ff_matches')) {
     localStorage.setItem('ff_matches', JSON.stringify(defaultMatches));
 }
 
-function getMatches() {
-    const m = localStorage.getItem('ff_matches');
-    return m ? JSON.parse(m) : [];
-}
+// Global list for caching
+var currentMatches = [];
 
-function isMatchVisible(match) {
-    const now = new Date().getTime();
-    // Hidden 10 minutes (600,000 ms) after start
-    return now <= (Number(match.startTime) + 600000);
+function getMatches() {
+    if (typeof useFirebase !== 'undefined' && useFirebase) {
+        // In Firebase mode, we rely on the onSnapshot listener 
+        // to have populated currentMatches already from index.html/app.js
+        return currentMatches;
+    }
+    var m = localStorage.getItem('ff_matches');
+    return m ? JSON.parse(m) : [];
 }
 
 function formatMatchTime(timestamp) {

@@ -5,13 +5,10 @@ function renderMatches(filterType = 'ALL') {
     if (!list) return;
 
     let allMatches = getMatches();
-    
-    // Filter visible matches for the general listing
-    let visibleMatches = allMatches.filter(isMatchVisible);
-    let filtered = visibleMatches;
+    let filtered = allMatches;
     
     if (filterType !== 'ALL') {
-        filtered = visibleMatches.filter(m => m.type === filterType);
+        filtered = allMatches.filter(m => m.type === filterType);
     }
 
     // Update Category View
@@ -26,14 +23,13 @@ function renderMatches(filterType = 'ALL') {
     // }
 
     startCountdowns();
-    updateCategoryCounts(allMatches); // Pass all matches to count visible ones
+    updateCategoryCounts(allMatches);
 }
 
 function updateCategoryCounts(matches) {
     const categories = ['BR', 'SURVIVAL', 'LONE_WOLF', 'CS_4V4'];
     categories.forEach(type => {
-        // Only count visible matches in each category
-        const count = matches.filter(m => m.type === type && isMatchVisible(m)).length;
+        const count = matches.filter(m => m.type === type).length;
         const countEl = document.querySelector(`.category-card[onclick*="${type}"] .cat-count`);
         if (countEl) countEl.innerText = `${count} matches found`;
     });
@@ -159,7 +155,22 @@ function confirmJoinMatch() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     checkAdminUI();
-    renderMatches();
+    
+    if (typeof useFirebase !== 'undefined' && useFirebase) {
+        console.log("[App] Syncing matches from Firebase...");
+        db.collection('matches').orderBy('startTime', 'asc').onSnapshot(function(snapshot) {
+            var matches = [];
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                data.id = doc.id; // Correctly map Firestore ID
+                matches.push(data);
+            });
+            window.currentMatches = matches; // Global update
+            renderMatches();
+        });
+    } else {
+        renderMatches();
+    }
 });
