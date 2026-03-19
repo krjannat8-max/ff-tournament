@@ -204,23 +204,32 @@
 
         // Signup Flow
         function startSignupVerification() {
+            console.log("[Debug] startSignupVerification triggered");
             const name = document.getElementById('reg-name').value;
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-password').value;
             
+            console.log("[Debug] Inputs:", { name, email, pass });
             if (!name || !email || !pass) return showToast("Please fill all fields!", "error");
             
-            // Basic email validation
             if (!email.includes('@')) return showToast("Invalid email address!", "error");
 
             tempUserData = { name, email, pass };
             currentAuthMode = 'signup';
             
-            auth.sendVerificationCode(email, 'signup');
-            document.getElementById('verify-email-display').innerText = email;
-            document.getElementById('reset-pass-group').style.display = 'none';
-            document.getElementById('verify-action-btn').innerText = 'Verify & Register';
-            showForm('verify-form');
+            try {
+                console.log("[Debug] Calling auth.sendVerificationCode...");
+                auth.sendVerificationCode(email, 'signup');
+                console.log("[Debug] Verification code sent (mock/real)");
+                
+                document.getElementById('verify-email-display').innerText = email;
+                document.getElementById('reset-pass-group').style.display = 'none';
+                document.getElementById('verify-action-btn').innerText = 'Verify & Register';
+                showForm('verify-form');
+            } catch (err) {
+                console.error("[Debug] Error in registration flow:", err);
+                alert("Error: " + err.message);
+            }
         }
 
         // Reset Flow

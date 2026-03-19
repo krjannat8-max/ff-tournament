@@ -1,3 +1,8 @@
+// EmailJS Configuration - Replace with your own from emailjs.com
+const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+
 // Device ID Logic
 if (!localStorage.getItem('ff_device_id')) {
     localStorage.setItem('ff_device_id', 'dev_' + Math.random().toString(36).substr(2, 9));
@@ -21,7 +26,7 @@ if (useFirebase) {
 }
 
 // Initialize EmailJS if the SDK is loaded
-if (typeof emailjs !== 'undefined') {
+if (typeof emailjs !== 'undefined' && typeof EMAILJS_PUBLIC_KEY !== 'undefined' && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
     emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
