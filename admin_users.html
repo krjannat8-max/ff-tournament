@@ -67,6 +67,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script>
         // Admin Check
@@ -74,11 +79,38 @@
 
         function loadUsers() {
             const list = document.getElementById('users-list');
-            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            
+            if (useFirebase) {
+                // Real-time listener for Firebase
+                db.collection('users').onSnapshot((snapshot) => {
+                    const users = [];
+                    snapshot.forEach(doc => users.push(doc.data()));
+                    renderUsersList(users);
+                }, (error) => {
+                    console.error("[Firebase] Error fetching users:", error);
+                    showToast("Failed to fetch online users", "error");
+                });
+                return;
+            }
 
+            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            renderUsersList(users);
+        }
+
+        async function renderUsersList(users) {
+            const list = document.getElementById('users-list');
             if (users.length === 0) {
                 list.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:50px;">No registered users</p>`;
                 return;
+            }
+
+            // Fetch global bans if using firebase
+            let bannedDevices = [];
+            if (useFirebase) {
+                const bansDoc = await db.collection('settings').doc('bans').get();
+                if (bansDoc.exists) bannedDevices = bansDoc.data().devices || [];
+            } else {
+                bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
             }
 
             list.innerHTML = users.map(user => {
@@ -116,7 +148,19 @@
             }).join('');
         }
 
-        function handleToggleBan(email) {
+        async function handleToggleBan(email) {
+            if (useFirebase) {
+                try {
+                    const userRef = db.collection('users').doc(email);
+                    const doc = await userRef.get();
+                    if (doc.exists) {
+                        const newStatus = !doc.data().isBanned;
+                        await userRef.update({ isBanned: newStatus });
+                        showToast(newStatus ? "User Banned!" : "User Unbanned!", "success");
+                    }
+                    return;
+                } catch (e) { showToast("Global ban failed", "error"); }
+            }
             const res = auth.toggleUserBan(email);
             if (res.success) {
                 showToast(res.banned ? "User Banned Successfully!" : "User Unbanned!", "success");
@@ -124,7 +168,30 @@
             }
         }
 
-        function handleToggleDeviceBan(email) {
+        async function handleToggleDeviceBan(email) {
+            if (useFirebase) {
+                try {
+                    const userDoc = await db.collection('users').doc(email).get();
+                    const devId = userDoc.data().lastDeviceId;
+                    if (!devId) return showToast("No device ID found", "error");
+
+                    const bansRef = db.collection('settings').doc('bans');
+                    const bansDoc = await bansRef.get();
+                    let devices = bansDoc.exists ? bansDoc.data().devices || [] : [];
+                    
+                    let isBanned = false;
+                    if (devices.includes(devId)) {
+                        devices = devices.filter(id => id !== devId);
+                        isBanned = false;
+                    } else {
+                        devices.push(devId);
+                        isBanned = true;
+                    }
+                    await bansRef.set({ devices }, { merge: true });
+                    showToast(isBanned ? "Device Banned!" : "Device Unbanned!", "success");
+                    return;
+                } catch (e) { showToast("Device ban failed", "error"); }
+            }
             const res = auth.toggleDeviceBan(email);
             if (res.success) {
                 showToast(res.banned ? "Device Banned Successfully!" : "Device Unbanned!", "success");
@@ -134,11 +201,25 @@
             }
         }
 
-        function adjustBalance(email, type) {
+        async function adjustBalance(email, type) {
             const amountStr = prompt(`Enter amount to ${type === 'add' ? 'add to' : 'deduct from'} balance:`);
             const amount = parseFloat(amountStr);
             
             if (isNaN(amount) || amount <= 0) return;
+
+            if (useFirebase) {
+                try {
+                    const userRef = db.collection('users').doc(email);
+                    const doc = await userRef.get();
+                    if (doc.exists) {
+                        let bal = Number(doc.data().balance) || 0;
+                        let finalBal = (type === 'add') ? bal + amount : Math.max(0, bal - amount);
+                        await userRef.update({ balance: finalBal });
+                        showToast("Online Balance Updated!", "success");
+                    }
+                    return;
+                } catch (e) { showToast("Online update failed", "error"); }
+            }
 
             let users = JSON.parse(localStorage.getItem('ff_users')) || [];
             const userIndex = users.findIndex(u => u.email === email);

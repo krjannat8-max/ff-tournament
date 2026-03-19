@@ -35,6 +35,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script src="wallet.js"></script>
     <script>
@@ -43,16 +48,37 @@
 
         function loadRequests() {
             const list = document.getElementById('requests-list');
+            
+            if (useFirebase) {
+                // Real-time listener for Firebase deposits
+                db.collection('deposits').where('status', '==', 'pending').onSnapshot((snapshot) => {
+                    const requests = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.docId = doc.id; // Store Firestore doc ID for actions
+                        requests.push(data);
+                    });
+                    renderRequestsList(requests);
+                }, (error) => {
+                    console.error("[Firebase] Error fetching deposits:", error);
+                });
+                return;
+            }
+
             const requests = JSON.parse(localStorage.getItem('ff_deposit_requests')) || [];
             const pending = requests.filter(r => r.status === 'pending');
+            renderRequestsList(pending);
+        }
 
-            if (pending.length === 0) {
+        function renderRequestsList(requests) {
+            const list = document.getElementById('requests-list');
+            if (requests.length === 0) {
                 list.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:50px;">No pending requests</p>`;
                 return;
             }
 
-            list.innerHTML = pending.map(req => `
-                <div class="request-card">
+            list.innerHTML = requests.map(req => `
+                <div class="request-card" id="req-${req.docId || req.id}">
                     <div style="font-weight:bold; margin-bottom:10px;">${req.userName} (${req.userEmail})</div>
                     <div class="req-info">
                         <div><span class="req-label">Amount:</span> ৳ ${req.amount}</div>
@@ -60,14 +86,38 @@
                         <div style="grid-column: span 2;"><span class="req-label">TXID:</span> <span style="color:var(--accent-yellow);">${req.txid}</span></div>
                     </div>
                     <div class="action-row">
-                        <button class="approve-btn" onclick="approveRequest(${req.id})">Approve</button>
-                        <button class="reject-btn" onclick="rejectRequest(${req.id})">Reject</button>
+                        <button class="approve-btn" onclick="approveRequest(${req.id}, '${req.docId || ''}')">Approve</button>
+                        <button class="reject-btn" onclick="rejectRequest(${req.id}, '${req.docId || ''}')">Reject</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function approveRequest(id) {
+        async function approveRequest(id, docId) {
+            if (useFirebase && docId) {
+                try {
+                    const reqRef = db.collection('deposits').doc(docId);
+                    const reqSnap = await reqRef.get();
+                    if (!reqSnap.exists) return;
+                    
+                    const req = reqSnap.data();
+                    const amount = Number(req.amount);
+                    const email = req.userEmail;
+
+                    // Atomic Update: Balance + Request Status
+                    const userRef = db.collection('users').doc(email);
+                    await db.runTransaction(async (transaction) => {
+                        const userDoc = await transaction.get(userRef);
+                        const currentBal = userDoc.exists ? (Number(userDoc.data().balance) || 0) : 0;
+                        transaction.update(userRef, { balance: currentBal + amount });
+                        transaction.update(reqRef, { status: 'approved', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    });
+
+                    showToast(`Online Approved: ৳ ${amount} for ${email}`, "success");
+                    return;
+                } catch (e) { showToast("Online Approval Failed", "error"); console.error(e); }
+            }
+
             let requests = JSON.parse(localStorage.getItem('ff_deposit_requests')) || [];
             let users = JSON.parse(localStorage.getItem('ff_users')) || [];
             
@@ -108,7 +158,12 @@
             }
         }
 
-        function rejectRequest(id) {
+        async function rejectRequest(id, docId) {
+            if (useFirebase && docId) {
+                await db.collection('deposits').doc(docId).update({ status: 'rejected' });
+                showToast("Online Request Rejected", "info");
+                return;
+            }
             let requests = JSON.parse(localStorage.getItem('ff_deposit_requests')) || [];
             const req = requests.find(r => r.id === id);
             if (req) {

@@ -1,13 +1,16 @@
-/* EmailJS Configuration - Get these from https://www.emailjs.com/ */
-const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";   // [REQUIRED] Replace with your Public Key
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";   // [REQUIRED] Replace with your Service ID
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; // [REQUIRED] Replace with your Template ID
-
 // Device ID Logic
 if (!localStorage.getItem('ff_device_id')) {
     localStorage.setItem('ff_device_id', 'dev_' + Math.random().toString(36).substr(2, 9));
 }
 const CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
+
+// Firebase Detection
+const useFirebase = (typeof firebase !== 'undefined' && firebase.apps.length > 0);
+if (useFirebase) {
+    console.log("[Auth] Firebase detected. Online sync enabled.");
+    var db = firebase.firestore();
+    var auth_firebase = firebase.auth();
+}
 
 // Initialize EmailJS if the SDK is loaded
 if (typeof emailjs !== 'undefined') {
@@ -18,7 +21,30 @@ const auth = {
     // Session management
     currentUser: JSON.parse(localStorage.getItem('ff_user')) || null,
 
-    register(email, password, name) {
+    async register(email, password, name) {
+        if (useFirebase) {
+            try {
+                const userCredential = await auth_firebase.createUserWithEmailAndPassword(email, password);
+                const newUser = { 
+                    email, 
+                    name, 
+                    balance: 0, 
+                    myMatches: [], 
+                    ignMap: {}, 
+                    wins: 0,
+                    isAdmin: false,
+                    isBanned: false,
+                    profilePic: null,
+                    lastDeviceId: CURRENT_DEVICE_ID,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('users').doc(email).set(newUser);
+                return { success: true, message: "Registration successful!" };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
         const users = JSON.parse(localStorage.getItem('ff_users')) || [];
         if (users.find(u => u.email === email)) {
             return { success: false, message: "User already exists!" };
@@ -42,7 +68,7 @@ const auth = {
         return { success: true, message: "Registration successful!" };
     },
 
-    login(emailOrId, password) {
+    async login(emailOrId, password) {
         // Special Hasan Bhai Admin Check
         if (emailOrId === 'HASAN BHAI' && password === 'HASAN BHAI347116') {
             const adminUser = {
@@ -57,41 +83,45 @@ const auth = {
             return { success: true, message: "Welcome Admin, Hasan Bhai!" };
         }
 
+        if (useFirebase) {
+            try {
+                const userCredential = await auth_firebase.signInWithEmailAndPassword(emailOrId, password);
+                const userDoc = await db.collection('users').doc(emailOrId).get();
+                if (userDoc.exists) {
+                    const user = userDoc.data();
+                    if (user.isBanned) return { success: false, message: "Your account is banned!" };
+                    
+                    // Check if device is banned (local list for now or global firestore)
+                    const globalSettings = await db.collection('settings').doc('bans').get();
+                    const bannedDevices = globalSettings.exists ? globalSettings.data().devices || [] : [];
+                    if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
+                        return { success: false, message: "This device is banned!" };
+                    }
+
+                    user.lastDeviceId = CURRENT_DEVICE_ID;
+                    await db.collection('users').doc(emailOrId).update({ lastDeviceId: CURRENT_DEVICE_ID });
+                    
+                    this.currentUser = user;
+                    localStorage.setItem('ff_user', JSON.stringify(user));
+                    return { success: true, message: "Login successful!" };
+                }
+                return { success: false, message: "User data not found!" };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
         const users = JSON.parse(localStorage.getItem('ff_users')) || [];
         const user = users.find(u => u.email === emailOrId && u.password === password);
         
         if (user) {
-            // Check if user is banned
-            if (user.isBanned) {
-                return { success: false, message: "Your account has been banned! Contact support." };
-            }
-
-            // Check if device is banned
+            if (user.isBanned) return { success: false, message: "Your account has been banned!" };
             const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
-            if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
-                return { success: false, message: "This device has been banned from the platform." };
-            }
+            if (bannedDevices.includes(CURRENT_DEVICE_ID)) return { success: false, message: "Device banned!" };
 
-            // Update device ID for user
             user.lastDeviceId = CURRENT_DEVICE_ID;
-            
-            // Ensure old users get new fields
-            if (!user.myMatches) user.myMatches = [];
-            if (!user.ignMap) user.ignMap = {};
-            if (user.wins === undefined) user.wins = 0;
-            if (user.isBanned === undefined) user.isBanned = false;
-            
             this.currentUser = user;
             localStorage.setItem('ff_user', JSON.stringify(user));
-            
-            // Sync this update back to main user list
-            const usersList = JSON.parse(localStorage.getItem('ff_users')) || [];
-            const idx = usersList.findIndex(u => u.email === user.email);
-            if (idx !== -1) {
-                usersList[idx] = user;
-                localStorage.setItem('ff_users', JSON.stringify(usersList));
-            }
-
             return { success: true, message: "Login successful!" };
         }
         return { success: false, message: "Invalid credentials!" };
@@ -103,9 +133,31 @@ const auth = {
         window.location.href = 'login.html';
     },
 
-    addJoinedMatch(matchId, ign) {
+    async addJoinedMatch(matchId, ign) {
         if (!this.currentUser) return;
         
+        if (useFirebase) {
+            try {
+                const userRef = db.collection('users').doc(this.currentUser.email);
+                const userDoc = await userRef.get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+                    let myMatches = data.myMatches || [];
+                    let ignMap = data.ignMap || {};
+                    
+                    if (!myMatches.includes(matchId)) {
+                        myMatches.push(matchId);
+                        ignMap[matchId] = ign;
+                        await userRef.update({ myMatches, ignMap });
+                        this.syncUser();
+                    }
+                }
+                return;
+            } catch (error) {
+                console.error("[Firebase] Match sync failed:", error);
+            }
+        }
+
         const users = JSON.parse(localStorage.getItem('ff_users')) || [];
         const userIndex = users.findIndex(u => u.email === this.currentUser.email);
         
@@ -122,8 +174,24 @@ const auth = {
         }
     },
 
-    syncUser() {
+    async syncUser() {
         if (!this.currentUser) return;
+        
+        if (useFirebase) {
+            try {
+                const userDoc = await db.collection('users').doc(this.currentUser.email).get();
+                if (userDoc.exists) {
+                    this.currentUser = userDoc.data();
+                    localStorage.setItem('ff_user', JSON.stringify(this.currentUser));
+                    // Update any bound UI components
+                    if (typeof wallet !== 'undefined' && wallet.updateHeader) wallet.updateHeader();
+                }
+                return;
+            } catch (error) {
+                console.error("[Firebase] User sync failed:", error);
+            }
+        }
+
         const users = JSON.parse(localStorage.getItem('ff_users')) || [];
         const user = users.find(u => u.email === this.currentUser.email);
         if (user) {

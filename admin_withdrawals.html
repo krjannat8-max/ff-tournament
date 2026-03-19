@@ -36,6 +36,11 @@
     </div>
 
     <!-- Inject Global Confirm Logic securely since admin pages need it -->
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script src="wallet.js"></script>
     <script>
@@ -44,16 +49,37 @@
 
         function loadRequests() {
             const list = document.getElementById('requests-list');
+            
+            if (useFirebase) {
+                // Real-time listener for Firebase withdrawals
+                db.collection('withdrawals').where('status', '==', 'pending').onSnapshot((snapshot) => {
+                    const requests = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.docId = doc.id; // Store Firestore doc ID
+                        requests.push(data);
+                    });
+                    renderRequestsList(requests);
+                }, (error) => {
+                    console.error("[Firebase] Error fetching withdrawals:", error);
+                });
+                return;
+            }
+
             const requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
             const pending = requests.filter(r => r.status === 'pending');
+            renderRequestsList(pending);
+        }
 
-            if (pending.length === 0) {
+        function renderRequestsList(requests) {
+            const list = document.getElementById('requests-list');
+            if (requests.length === 0) {
                 list.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:50px;">No pending withdrawal requests</p>`;
                 return;
             }
 
-            list.innerHTML = pending.map(req => `
-                <div class="request-card">
+            list.innerHTML = requests.map(req => `
+                <div class="request-card" id="req-${req.docId || req.id}">
                     <div style="font-weight:bold; margin-bottom:10px;">${req.userName} <span style="font-size:0.8rem; color:var(--text-dim);">(${req.userEmail})</span></div>
                     <div class="req-info">
                         <div><span class="req-label">Amount:</span> <span style="color:#ef4444; font-weight:bold;">৳ ${req.amount}</span></div>
@@ -61,15 +87,26 @@
                         <div style="grid-column: span 2;"><span class="req-label">Account:</span> <span style="color:var(--accent-yellow); font-size:1.1rem; letter-spacing:1px;">${req.account}</span></div>
                     </div>
                     <div class="action-row">
-                        <button class="approve-btn" onclick="approveWithdrawal(${req.id})">Approve (Sent)</button>
-                        <button class="reject-btn" onclick="rejectWithdrawal(${req.id}, ${req.amount}, '${req.userEmail}')">Reject & Refund</button>
+                        <button class="approve-btn" onclick="approveWithdrawal(${req.id}, '${req.docId || ''}')">Approve (Sent)</button>
+                        <button class="reject-btn" onclick="rejectWithdrawal(${req.id}, ${req.amount}, '${req.userEmail}', '${req.docId || ''}')">Reject & Refund</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function approveWithdrawal(id) {
-            showCustomConfirm("Did you successfully send the money to the user's account? This will mark the request as approved.", "APPROVE WITHDRAWAL", () => {
+        function approveWithdrawal(id, docId) {
+            showCustomConfirm("Did you successfully send the money to the user's account? This will mark the request as approved.", "APPROVE WITHDRAWAL", async () => {
+                if (useFirebase && docId) {
+                    try {
+                        await db.collection('withdrawals').doc(docId).update({ 
+                            status: 'approved', 
+                            approvedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                        });
+                        showToast("Online Withdrawal Approved!", "success");
+                        return;
+                    } catch (e) { showToast("Online Approval Failed", "error"); }
+                }
+
                 let requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
                 const reqIndex = requests.findIndex(r => r.id === id);
                 if (reqIndex !== -1) {
@@ -82,8 +119,24 @@
             });
         }
 
-        function rejectWithdrawal(id, amount, email) {
-            showCustomConfirm(`This will mark the request as rejected and REFUND ৳ ${amount} back to the user's account.`, "REJECT & REFUND", () => {
+        function rejectWithdrawal(id, amount, email, docId) {
+            showCustomConfirm(`This will mark the request as rejected and REFUND ৳ ${amount} back to the user's account.`, "REJECT & REFUND", async () => {
+                if (useFirebase && docId) {
+                    try {
+                        const userRef = db.collection('users').doc(email);
+                        const reqRef = db.collection('withdrawals').doc(docId);
+                        
+                        await db.runTransaction(async (transaction) => {
+                            const userSnap = await transaction.get(userRef);
+                            const currentBal = userSnap.exists ? (Number(userSnap.data().balance) || 0) : 0;
+                            transaction.update(userRef, { balance: currentBal + Number(amount) });
+                            transaction.update(reqRef, { status: 'rejected' });
+                        });
+                        showToast("Online Transaction Rejected & Refunded!", "success");
+                        return;
+                    } catch (e) { showToast("Online Refund Failed", "error"); }
+                }
+
                 let requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
                 let users = JSON.parse(localStorage.getItem('ff_users')) || [];
                 
