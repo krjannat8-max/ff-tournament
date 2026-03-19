@@ -752,3 +752,90 @@ label {
     mask-composite: exclude;
     pointer-events: none;
 }
+/* --- Mobile Responsiveness --- */
+@media (max-width: 480px) {
+    :root {
+        --logo-font-size: 1.15rem;
+    }
+    
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+    }
+
+    .app-header {
+        padding: 10px 15px;
+        top: 5px;
+        margin: 0 8px;
+    }
+
+    .logo {
+        font-size: var(--logo-font-size);
+        letter-spacing: 1px;
+    }
+
+    .rules-badge, .wallet-badge {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .hero-banner {
+        height: 140px;
+        margin: 15px auto 10px;
+    }
+
+    .hero-content h2 {
+        font-size: 1.3rem;
+    }
+
+    .hero-content p {
+        font-size: 0.75rem;
+    }
+
+    .section-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+    }
+
+    .match-info-item span {
+        font-size: 0.75rem;
+    }
+
+    .btn-premium {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .bottom-nav {
+        width: 94%;
+        padding: 8px 0;
+        bottom: 12px;
+    }
+
+    .nav-item i {
+        font-size: 1.1rem;
+    }
+    
+    .form-card {
+        padding: 18px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        width: 92%;
+    }
+}
+
+@media (max-width: 360px) {
+    .logo {
+        font-size: 1rem;
+    }
+    
+    .hero-content h2 {
+        font-size: 1.1rem;
+    }
+}
