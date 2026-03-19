@@ -286,6 +286,7 @@ window.auth = {
         if (!this.currentUser) return Promise.resolve(false);
 
         if (useFirebase) {
+            console.log("[Debug] Updating profile pic in Firebase...");
             return db.collection('users').doc(this.currentUser.email).update({ profilePic: picBase64 })
                 .then(function() {
                     self.syncUser();
@@ -293,19 +294,35 @@ window.auth = {
                 })
                 .catch(function(error) {
                     console.error("[Firebase] Profile pic update failed:", error);
+                    alert("Firebase Error: " + error.message);
                     return false;
                 });
         }
 
-        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        var idx = users.findIndex(function(u) { return u.email === self.currentUser.email; });
-        if (idx !== -1) {
-            users[idx].profilePic = picBase64;
-            localStorage.setItem('ff_users', JSON.stringify(users));
-            this.syncUser();
-            return Promise.resolve(true);
+        console.log("[Debug] Updating profile pic in LocalStorage...");
+        try {
+            var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            var email = self.currentUser.email;
+            var idx = -1;
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].email === email) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            if (idx !== -1) {
+                users[idx].profilePic = picBase64;
+                localStorage.setItem('ff_users', JSON.stringify(users));
+                this.syncUser();
+                return Promise.resolve(true);
+            }
+            return Promise.resolve(false);
+        } catch (e) {
+            console.error("[LocalStorage] Update failed:", e);
+            alert("LocalStorage Error (Memory Full?): " + e.message);
+            return Promise.resolve(false);
         }
-        return Promise.resolve(false);
     },
 
     sendVerificationCode: function(email, type) {
