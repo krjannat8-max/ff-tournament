@@ -5,10 +5,13 @@ function renderMatches(filterType = 'ALL') {
     if (!list) return;
 
     let allMatches = getMatches();
-    let filtered = allMatches;
+    
+    // Filter visible matches for the general listing
+    let visibleMatches = allMatches.filter(isMatchVisible);
+    let filtered = visibleMatches;
     
     if (filterType !== 'ALL') {
-        filtered = allMatches.filter(m => m.type === filterType);
+        filtered = visibleMatches.filter(m => m.type === filterType);
     }
 
     // Update Category View
@@ -23,13 +26,14 @@ function renderMatches(filterType = 'ALL') {
     // }
 
     startCountdowns();
-    updateCategoryCounts(allMatches);
+    updateCategoryCounts(allMatches); // Pass all matches to count visible ones
 }
 
 function updateCategoryCounts(matches) {
     const categories = ['BR', 'SURVIVAL', 'LONE_WOLF', 'CS_4V4'];
     categories.forEach(type => {
-        const count = matches.filter(m => m.type === type).length;
+        // Only count visible matches in each category
+        const count = matches.filter(m => m.type === type && isMatchVisible(m)).length;
         const countEl = document.querySelector(`.category-card[onclick*="${type}"] .cat-count`);
         if (countEl) countEl.innerText = `${count} matches found`;
     });

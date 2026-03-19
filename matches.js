@@ -67,6 +67,12 @@ function getMatches() {
     return m ? JSON.parse(m) : [];
 }
 
+function isMatchVisible(match) {
+    const now = new Date().getTime();
+    // Hidden 10 minutes (600,000 ms) after start
+    return now <= (Number(match.startTime) + 600000);
+}
+
 function formatMatchTime(timestamp) {
     const date = new Date(timestamp);
     let hours = date.getHours();
