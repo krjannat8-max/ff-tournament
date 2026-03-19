@@ -1,72 +1,78 @@
 // EmailJS Configuration - Replace with your own from emailjs.com
-const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+var EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+var EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
+var EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
 
 // Device ID Logic
 if (!localStorage.getItem('ff_device_id')) {
     localStorage.setItem('ff_device_id', 'dev_' + Math.random().toString(36).substr(2, 9));
 }
-const CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
+var CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
 
 // Firebase Detection
-const useFirebase = (
+var useFirebase = (
     typeof firebase !== 'undefined' && 
     firebase.apps.length > 0 && 
+    typeof firebaseConfig !== 'undefined' &&
     firebaseConfig.apiKey !== "YOUR_API_KEY" &&
     firebaseConfig.apiKey !== ""
 );
 
+var db, auth_firebase;
 if (useFirebase) {
     console.log("[Auth] Firebase detected. Online sync enabled.");
-    var db = firebase.firestore();
-    var auth_firebase = firebase.auth();
+    db = firebase.firestore();
+    auth_firebase = firebase.auth();
 } else {
     console.log("[Auth] Firebase not configured. Using LocalStorage mode.");
 }
 
 // Initialize EmailJS if the SDK is loaded
-if (typeof emailjs !== 'undefined' && typeof EMAILJS_PUBLIC_KEY !== 'undefined' && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
     emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
-const auth = {
+window.auth = {
     // Session management
     currentUser: JSON.parse(localStorage.getItem('ff_user')) || null,
 
-    async register(email, password, name) {
+    register: function(email, password, name) {
+        var self = this;
         if (useFirebase) {
-            try {
-                const userCredential = await auth_firebase.createUserWithEmailAndPassword(email, password);
-                const newUser = { 
-                    email, 
-                    name, 
-                    balance: 0, 
-                    myMatches: [], 
-                    ignMap: {}, 
-                    wins: 0,
-                    isAdmin: false,
-                    isBanned: false,
-                    profilePic: null,
-                    lastDeviceId: CURRENT_DEVICE_ID,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                await db.collection('users').doc(email).set(newUser);
-                return { success: true, message: "Registration successful!" };
-            } catch (error) {
-                return { success: false, message: error.message };
-            }
+            return auth_firebase.createUserWithEmailAndPassword(email, password)
+                .then(function() {
+                    var newUser = { 
+                        email: email, 
+                        name: name, 
+                        balance: 0, 
+                        myMatches: [], 
+                        ignMap: {}, 
+                        wins: 0,
+                        isAdmin: false,
+                        isBanned: false,
+                        profilePic: null,
+                        lastDeviceId: CURRENT_DEVICE_ID,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    return db.collection('users').doc(email).set(newUser);
+                })
+                .then(function() {
+                    return { success: true, message: "Registration successful!" };
+                })
+                .catch(function(error) {
+                    return { success: false, message: error.message };
+                });
         }
 
-        const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        if (users.find(u => u.email === email)) {
-            return { success: false, message: "User already exists!" };
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        if (users.find(function(u) { return u.email === email; })) {
+            return Promise.resolve({ success: false, message: "User already exists!" });
         }
         
-        const newUser = { 
-            email, 
-            password, 
-            name, 
+        var newUser = { 
+            email: email, 
+            password: password, 
+            name: name, 
             balance: 0, 
             myMatches: [], 
             ignMap: {}, 
@@ -78,13 +84,14 @@ const auth = {
         };
         users.push(newUser);
         localStorage.setItem('ff_users', JSON.stringify(users));
-        return { success: true, message: "Registration successful!" };
+        return Promise.resolve({ success: true, message: "Registration successful!" });
     },
 
-    async login(emailOrId, password) {
+    login: function(emailOrId, password) {
+        var self = this;
         // Special Hasan Bhai Admin Check
         if (emailOrId === 'HASAN BHAI' && password === 'HASAN BHAI347116') {
-            const adminUser = {
+            var adminUser = {
                 name: "Hasan Bhai",
                 email: "admin@pro.ff",
                 balance: 999999,
@@ -93,92 +100,95 @@ const auth = {
             };
             this.currentUser = adminUser;
             localStorage.setItem('ff_user', JSON.stringify(adminUser));
-            return { success: true, message: "Welcome Admin, Hasan Bhai!" };
+            return Promise.resolve({ success: true, message: "Welcome Admin, Hasan Bhai!" });
         }
 
         if (useFirebase) {
-            try {
-                const userCredential = await auth_firebase.signInWithEmailAndPassword(emailOrId, password);
-                const userDoc = await db.collection('users').doc(emailOrId).get();
-                if (userDoc.exists) {
-                    const user = userDoc.data();
-                    if (user.isBanned) return { success: false, message: "Your account is banned!" };
-                    
-                    // Check if device is banned (local list for now or global firestore)
-                    const globalSettings = await db.collection('settings').doc('bans').get();
-                    const bannedDevices = globalSettings.exists ? globalSettings.data().devices || [] : [];
-                    if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
-                        return { success: false, message: "This device is banned!" };
-                    }
+            return auth_firebase.signInWithEmailAndPassword(emailOrId, password)
+                .then(function() {
+                    return db.collection('users').doc(emailOrId).get();
+                })
+                .then(function(userDoc) {
+                    if (userDoc.exists) {
+                        var user = userDoc.data();
+                        if (user.isBanned) return { success: false, message: "Your account is banned!" };
+                        
+                        return db.collection('settings').doc('bans').get().then(function(globalSettings) {
+                            var bannedDevices = globalSettings.exists ? globalSettings.data().devices || [] : [];
+                            if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
+                                return { success: false, message: "This device is banned!" };
+                            }
 
-                    user.lastDeviceId = CURRENT_DEVICE_ID;
-                    await db.collection('users').doc(emailOrId).update({ lastDeviceId: CURRENT_DEVICE_ID });
-                    
-                    this.currentUser = user;
-                    localStorage.setItem('ff_user', JSON.stringify(user));
-                    return { success: true, message: "Login successful!" };
-                }
-                return { success: false, message: "User data not found!" };
-            } catch (error) {
-                return { success: false, message: error.message };
-            }
+                            user.lastDeviceId = CURRENT_DEVICE_ID;
+                            return db.collection('users').doc(emailOrId).update({ lastDeviceId: CURRENT_DEVICE_ID }).then(function() {
+                                self.currentUser = user;
+                                localStorage.setItem('ff_user', JSON.stringify(user));
+                                return { success: true, message: "Login successful!" };
+                            });
+                        });
+                    }
+                    return { success: false, message: "User data not found!" };
+                })
+                .catch(function(error) {
+                    return { success: false, message: error.message };
+                });
         }
 
-        const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const user = users.find(u => u.email === emailOrId && u.password === password);
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var user = users.find(function(u) { return u.email === emailOrId && u.password === password; });
         
         if (user) {
-            if (user.isBanned) return { success: false, message: "Your account has been banned!" };
-            const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
-            if (bannedDevices.includes(CURRENT_DEVICE_ID)) return { success: false, message: "Device banned!" };
+            if (user.isBanned) return Promise.resolve({ success: false, message: "Your account has been banned!" });
+            var bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+            if (bannedDevices.indexOf(CURRENT_DEVICE_ID) !== -1) return Promise.resolve({ success: false, message: "Device banned!" });
 
             user.lastDeviceId = CURRENT_DEVICE_ID;
             this.currentUser = user;
             localStorage.setItem('ff_user', JSON.stringify(user));
-            return { success: true, message: "Login successful!" };
+            return Promise.resolve({ success: true, message: "Login successful!" });
         }
-        return { success: false, message: "Invalid credentials!" };
+        return Promise.resolve({ success: false, message: "Invalid credentials!" });
     },
 
-    logout() {
+    logout: function() {
         this.currentUser = null;
         localStorage.removeItem('ff_user');
         window.location.href = 'login.html';
     },
 
-    async addJoinedMatch(matchId, ign) {
+    addJoinedMatch: function(matchId, ign) {
+        var self = this;
         if (!this.currentUser) return;
         
         if (useFirebase) {
-            try {
-                const userRef = db.collection('users').doc(this.currentUser.email);
-                const userDoc = await userRef.get();
+            var userRef = db.collection('users').doc(this.currentUser.email);
+            return userRef.get().then(function(userDoc) {
                 if (userDoc.exists) {
-                    const data = userDoc.data();
-                    let myMatches = data.myMatches || [];
-                    let ignMap = data.ignMap || {};
+                    var data = userDoc.data();
+                    var myMatches = data.myMatches || [];
+                    var ignMap = data.ignMap || {};
                     
-                    if (!myMatches.includes(matchId)) {
+                    if (myMatches.indexOf(matchId) === -1) {
                         myMatches.push(matchId);
                         ignMap[matchId] = ign;
-                        await userRef.update({ myMatches, ignMap });
-                        this.syncUser();
+                        return userRef.update({ myMatches: myMatches, ignMap: ignMap }).then(function() {
+                            return self.syncUser();
+                        });
                     }
                 }
-                return;
-            } catch (error) {
+            }).catch(function(error) {
                 console.error("[Firebase] Match sync failed:", error);
-            }
+            });
         }
 
-        const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const userIndex = users.findIndex(u => u.email === this.currentUser.email);
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var userIndex = users.findIndex(function(u) { return u.email === self.currentUser.email; });
         
         if (userIndex !== -1) {
             if (!users[userIndex].myMatches) users[userIndex].myMatches = [];
             if (!users[userIndex].ignMap) users[userIndex].ignMap = {};
             
-            if (!users[userIndex].myMatches.includes(matchId)) {
+            if (users[userIndex].myMatches.indexOf(matchId) === -1) {
                 users[userIndex].myMatches.push(matchId);
                 users[userIndex].ignMap[matchId] = ign;
                 localStorage.setItem('ff_users', JSON.stringify(users));
@@ -187,55 +197,51 @@ const auth = {
         }
     },
 
-    async syncUser() {
-        if (!this.currentUser) return;
+    syncUser: function() {
+        var self = this;
+        if (!this.currentUser) return Promise.resolve();
         
         if (useFirebase) {
-            try {
-                const userDoc = await db.collection('users').doc(this.currentUser.email).get();
+            return db.collection('users').doc(this.currentUser.email).get().then(function(userDoc) {
                 if (userDoc.exists) {
-                    this.currentUser = userDoc.data();
-                    localStorage.setItem('ff_user', JSON.stringify(this.currentUser));
-                    // Update any bound UI components
+                    self.currentUser = userDoc.data();
+                    localStorage.setItem('ff_user', JSON.stringify(self.currentUser));
                     if (typeof wallet !== 'undefined' && wallet.updateHeader) wallet.updateHeader();
                 }
-                return;
-            } catch (error) {
+            }).catch(function(error) {
                 console.error("[Firebase] User sync failed:", error);
-            }
+            });
         }
 
-        const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const user = users.find(u => u.email === this.currentUser.email);
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var user = users.find(function(u) { return u.email === self.currentUser.email; });
         if (user) {
             this.currentUser = user;
             localStorage.setItem('ff_user', JSON.stringify(this.currentUser));
         }
+        return Promise.resolve();
     },
 
-    syncBalance() {
+    syncBalance: function() {
         this.syncUser();
     },
 
-    checkAuth() {
-        // 1. Check Device Ban (Global)
-        const bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
-        if (bannedDevices.includes(CURRENT_DEVICE_ID)) {
-            if (!window.location.href.includes('banned.html')) {
+    checkAuth: function() {
+        var bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+        if (bannedDevices.indexOf(CURRENT_DEVICE_ID) !== -1) {
+            if (window.location.href.indexOf('banned.html') === -1) {
                 window.location.href = 'banned.html';
             }
             return;
         }
 
-        // 2. Check User Session & User Ban
         if (!this.currentUser) {
-            if (!window.location.href.includes('login.html') && !window.location.href.includes('banned.html')) {
+            if (window.location.href.indexOf('login.html') === -1 && window.location.href.indexOf('banned.html') === -1) {
                 window.location.href = 'login.html';
             }
         } else {
-            // Check if current user was just banned
-            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-            const user = users.find(u => u.email === this.currentUser.email);
+            var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            var user = users.find(function(u) { return u.email === this.currentUser.email; }.bind(this));
             if (user && user.isBanned) {
                 this.logout();
                 window.location.href = 'banned.html?type=account';
@@ -243,10 +249,9 @@ const auth = {
         }
     },
 
-    // Administrative Actions
-    toggleUserBan(email) {
-        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const idx = users.findIndex(u => u.email === email);
+    toggleUserBan: function(email) {
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var idx = users.findIndex(function(u) { return u.email === email; });
         if (idx !== -1) {
             users[idx].isBanned = !users[idx].isBanned;
             localStorage.setItem('ff_users', JSON.stringify(users));
@@ -255,17 +260,17 @@ const auth = {
         return { success: false };
     },
 
-    toggleDeviceBan(email) {
-        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const user = users.find(u => u.email === email);
+    toggleDeviceBan: function(email) {
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var user = users.find(function(u) { return u.email === email; });
         if (!user || !user.lastDeviceId) return { success: false, message: "Device not found" };
 
-        let bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
-        const devId = user.lastDeviceId;
-        let isBanned = false;
+        var bannedDevices = JSON.parse(localStorage.getItem('ff_banned_devices')) || [];
+        var devId = user.lastDeviceId;
+        var isBanned = false;
 
-        if (bannedDevices.includes(devId)) {
-            bannedDevices = bannedDevices.filter(id => id !== devId);
+        if (bannedDevices.indexOf(devId) !== -1) {
+            bannedDevices = bannedDevices.filter(function(id) { return id !== devId; });
             isBanned = false;
         } else {
             bannedDevices.push(devId);
@@ -276,188 +281,160 @@ const auth = {
         return { success: true, banned: isBanned };
     },
 
-    async updateProfilePic(picBase64) {
-        if (!this.currentUser) return;
+    updateProfilePic: function(picBase64) {
+        var self = this;
+        if (!this.currentUser) return Promise.resolve(false);
 
         if (useFirebase) {
-            try {
-                await db.collection('users').doc(this.currentUser.email).update({ profilePic: picBase64 });
-                this.syncUser();
-                return true;
-            } catch (error) {
-                console.error("[Firebase] Profile pic update failed:", error);
-                return false;
-            }
+            return db.collection('users').doc(this.currentUser.email).update({ profilePic: picBase64 })
+                .then(function() {
+                    self.syncUser();
+                    return true;
+                })
+                .catch(function(error) {
+                    console.error("[Firebase] Profile pic update failed:", error);
+                    return false;
+                });
         }
 
-        let users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const idx = users.findIndex(u => u.email === this.currentUser.email);
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var idx = users.findIndex(function(u) { return u.email === self.currentUser.email; });
         if (idx !== -1) {
             users[idx].profilePic = picBase64;
             localStorage.setItem('ff_users', JSON.stringify(users));
             this.syncUser();
-            return true;
+            return Promise.resolve(true);
         }
-        return false;
+        return Promise.resolve(false);
     },
 
-    // Verification System (Real Email via EmailJS)
-    sendVerificationCode(email, type = 'signup') {
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiry = Date.now() + 5 * 60000; // 5 mins
+    sendVerificationCode: function(email, type) {
+        type = type || 'signup';
+        var code = Math.floor(100000 + Math.random() * 900000).toString();
+        var expiry = Date.now() + 5 * 60000; // 5 mins
         
-        const verificationData = { code, email, expiry, type };
-        localStorage.setItem(`ff_verify_${email}`, JSON.stringify(verificationData));
+        var verificationData = { code: code, email: email, expiry: expiry, type: type };
+        localStorage.setItem('ff_verify_' + email, JSON.stringify(verificationData));
         
-        // Show Toast immediately so the user knows something is happening
-        showToast(`Sending verification code to ${email}...`, "info");
+        window.showToast("Sending verification code to " + email + "...", "info");
         
-        // Prepare Email Template Parameters
-        const templateParams = {
+        var templateParams = {
             to_email: email,
             app_name: "FF Tournament Pro",
             code: code,
             type: type === 'signup' ? "Registration" : "Password Recovery"
         };
 
-        // Send Email via EmailJS
         if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
             emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-                .then(() => {
-                    showToast(`Code sent successfully to ${email}!`, "success");
-                    console.log(`[EmailJS] Success: Code ${code} sent to ${email}`);
+                .then(function() {
+                    window.showToast("Code sent successfully to " + email + "!", "success");
                 })
-                .catch((error) => {
+                .catch(function(error) {
                     console.error("[EmailJS] Failed to send email:", error);
-                    showToast("Failed to send email. Please check your EmailJS configuration.", "error");
-                    // Fallback for testing: Show code in toast if EmailJS is not configured properly
-                    showToast(`[TEST MODE] Your code is: ${code}`, "warning");
+                    window.showToast("Failed to send email. Check your configuration.", "error");
+                    window.showToast("[TEST MODE] Your code is: " + code, "warning");
                 });
         } else {
-            // Fallback for when EmailJS is not yet configured by the user
-            console.warn("[AUTH] EmailJS not configured. Falling back to Mock mode.");
-            showToast(`[CONFIG REQUIRED] Your code is: ${code}`, "warning");
-            console.log(`[MOCK EMAIL] To: ${email} | Code: ${code}`);
+            window.showToast("[CONFIG REQUIRED] Your code is: " + code, "warning");
+            console.log("[MOCK EMAIL] To: " + email + " | Code: " + code);
         }
         
         return { success: true, debugCode: code }; 
     },
 
-    verifyCode(email, inputCode, type = 'signup') {
-        const data = JSON.parse(localStorage.getItem(`ff_verify_${email}`));
+    verifyCode: function(email, inputCode, type) {
+        type = type || 'signup';
+        var data = JSON.parse(localStorage.getItem('ff_verify_' + email));
         if (!data) return { success: false, message: "No verification request found!" };
         
         if (Date.now() > data.expiry) {
-            localStorage.removeItem(`ff_verify_${email}`);
+            localStorage.removeItem('ff_verify_' + email);
             return { success: false, message: "Code expired! Please request a new one." };
         }
         
         if (data.code === inputCode && data.type === type) {
-            localStorage.removeItem(`ff_verify_${email}`);
+            localStorage.removeItem('ff_verify_' + email);
             return { success: true };
         }
         
         return { success: false, message: "Invalid verification code!" };
     },
 
-    resetPassword(email, code, newPassword) {
-        const verify = this.verifyCode(email, code, 'reset');
-        if (!verify.success) return verify;
+    resetPassword: function(email, code, newPassword) {
+        var self = this;
+        var verify = this.verifyCode(email, code, 'reset');
+        if (!verify.success) return Promise.resolve(verify);
         
-        const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-        const userIndex = users.findIndex(u => u.email === email);
+        var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+        var userIndex = users.findIndex(function(u) { return u.email === email; });
         
         if (userIndex !== -1) {
             users[userIndex].password = newPassword;
             localStorage.setItem('ff_users', JSON.stringify(users));
-            return { success: true, message: "Password reset successful! Please login." };
+            return Promise.resolve({ success: true, message: "Password reset successful! Please login." });
         }
-        return { success: false, message: "User not found!" };
+        return Promise.resolve({ success: false, message: "User not found!" });
     }
 };
 
-// Auto-check auth on protected pages
-if (!window.location.href.includes('login.html')) {
-    auth.checkAuth();
-}
-
-// Premium Notification System
-function showToast(message, type = 'info') {
-    let container = document.getElementById('toast-container');
+window.showToast = function(message, type) {
+    type = type || 'info';
+    var container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
         document.body.prepend(container);
     }
 
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
     
-    let icon = 'info-circle';
+    var icon = 'info-circle';
     if (type === 'success') icon = 'check-circle';
     if (type === 'error') icon = 'exclamation-circle';
 
-    toast.innerHTML = `
-        <i class="fas fa-${icon}"></i>
-        <span>${message}</span>
-    `;
+    toast.innerHTML = '<i class="fas fa-' + icon + '"></i><span>' + message + '</span>';
 
     container.appendChild(toast);
 
-    // Remove toast after 3 seconds
-    setTimeout(() => {
+    setTimeout(function() {
         toast.style.animation = 'toastOut 0.4s forwards';
-        setTimeout(() => toast.remove(), 400);
+        setTimeout(function() { if(toast.parentNode) toast.remove(); }, 400);
     }, 3000);
-}
+};
 
 // Global Custom Confirm Modal
-let currentConfirmCallback = null;
-
-function showCustomConfirm(message, title = "CONFIRM ACTION", onConfirm) {
-    let modal = document.getElementById('global-confirm-modal');
+var currentConfirmCallback = null;
+window.showCustomConfirm = function(message, title, onConfirm) {
+    title = title || "CONFIRM ACTION";
+    var modal = document.getElementById('global-confirm-modal');
     
-    // Inject if it doesn't exist
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'global-confirm-modal';
         modal.className = 'custom-modal-overlay';
-        modal.innerHTML = `
-            <div class="custom-modal-content glass">
-                <div class="modal-warning-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <h3 id="confirm-modal-title" style="color: var(--primary-color); text-transform: uppercase; font-family: 'Space Grotesk', sans-serif; letter-spacing: 2px; text-shadow: var(--neon-glow); margin-bottom: 10px;">CONFIRM ACTION</h3>
-                <p id="confirm-modal-msg" style="color: var(--text-main); font-size: 1rem; margin-bottom: 25px; line-height: 1.5;"></p>
-                
-                <div style="display: flex; gap: 15px; margin-top: 10px;">
-                    <button class="modal-btn cancel-btn" onclick="closeCustomConfirm()">CANCEL</button>
-                    <button class="modal-btn confirm-btn" style="background: linear-gradient(45deg, #ef4444, #991b1b);" onclick="executeCustomConfirm()">YES, CONFIRM</button>
-                </div>
-            </div>
-        `;
+        modal.innerHTML = '<div class="custom-modal-content glass"><div class="modal-warning-icon"><i class="fas fa-exclamation-triangle"></i></div><h3 id="confirm-modal-title"></h3><p id="confirm-modal-msg"></p><div style="display: flex; gap: 15px; margin-top: 10px;"><button class="modal-btn cancel-btn" onclick="closeCustomConfirm()">CANCEL</button><button class="modal-btn confirm-btn" style="background: linear-gradient(45deg, #ef4444, #991b1b);" onclick="executeCustomConfirm()">YES, CONFIRM</button></div></div>';
         document.body.appendChild(modal);
     }
     
     document.getElementById('confirm-modal-title').innerText = title;
     document.getElementById('confirm-modal-msg').innerText = message;
-    
     currentConfirmCallback = onConfirm;
-    
     modal.style.display = 'flex';
-}
+};
 
-function closeCustomConfirm() {
-    const modal = document.getElementById('global-confirm-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+window.closeCustomConfirm = function() {
+    var modal = document.getElementById('global-confirm-modal');
+    if (modal) modal.style.display = 'none';
     currentConfirmCallback = null;
-}
+};
 
-function executeCustomConfirm() {
-    if (currentConfirmCallback) {
-        currentConfirmCallback();
-    }
+window.executeCustomConfirm = function() {
+    if (currentConfirmCallback) currentConfirmCallback();
     closeCustomConfirm();
+};
+
+if (window.location.href.indexOf('login.html') === -1) {
+    window.auth.checkAuth();
 }

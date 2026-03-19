@@ -1,6 +1,6 @@
 // Firebase Configuration - Placeholder
 // Replace with the config Hasan Bhai provides
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_AUTH_DOMAIN",
     projectId: "YOUR_PROJECT_ID",
@@ -12,7 +12,7 @@ const firebaseConfig = {
 // Initialize Firebase
 if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth_firebase = firebase.auth();
+    var db_config = firebase.firestore();
+    var auth_firebase_config = firebase.auth();
     console.log("[Firebase] Initialized with placeholder config.");
 }
