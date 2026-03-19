@@ -232,9 +232,9 @@
             }
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const base64 = e.target.result;
-                if (auth.updateProfilePic(base64)) {
+                if (await auth.updateProfilePic(base64)) {
                     showToast("Profile Picture Updated!", "success");
                     document.getElementById('disp-avatar-content').innerHTML = `<img src="${base64}" alt="Profile">`;
                 }

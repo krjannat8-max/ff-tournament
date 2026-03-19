@@ -5,11 +5,19 @@ if (!localStorage.getItem('ff_device_id')) {
 const CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
 
 // Firebase Detection
-const useFirebase = (typeof firebase !== 'undefined' && firebase.apps.length > 0);
+const useFirebase = (
+    typeof firebase !== 'undefined' && 
+    firebase.apps.length > 0 && 
+    firebaseConfig.apiKey !== "YOUR_API_KEY" &&
+    firebaseConfig.apiKey !== ""
+);
+
 if (useFirebase) {
     console.log("[Auth] Firebase detected. Online sync enabled.");
     var db = firebase.firestore();
     var auth_firebase = firebase.auth();
+} else {
+    console.log("[Auth] Firebase not configured. Using LocalStorage mode.");
 }
 
 // Initialize EmailJS if the SDK is loaded
@@ -263,8 +271,20 @@ const auth = {
         return { success: true, banned: isBanned };
     },
 
-    updateProfilePic(picBase64) {
+    async updateProfilePic(picBase64) {
         if (!this.currentUser) return;
+
+        if (useFirebase) {
+            try {
+                await db.collection('users').doc(this.currentUser.email).update({ profilePic: picBase64 });
+                this.syncUser();
+                return true;
+            } catch (error) {
+                console.error("[Firebase] Profile pic update failed:", error);
+                return false;
+            }
+        }
+
         let users = JSON.parse(localStorage.getItem('ff_users')) || [];
         const idx = users.findIndex(u => u.email === this.currentUser.email);
         if (idx !== -1) {

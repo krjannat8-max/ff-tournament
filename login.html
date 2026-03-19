@@ -191,10 +191,10 @@
             document.getElementById(formId).style.display = 'block';
         }
 
-        function handleLogin() {
+        async function handleLogin() {
             const emailOrId = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
-            const res = auth.login(emailOrId, pass);
+            const res = await auth.login(emailOrId, pass);
             if (res.success) {
                 location.href = 'index.html';
             } else {
@@ -236,7 +236,7 @@
             showForm('verify-form');
         }
 
-        function finalizeAuth() {
+        async function finalizeAuth() {
             const code = document.getElementById('verify-code').value;
             const email = document.getElementById('verify-email-display').innerText;
 
@@ -245,12 +245,12 @@
             if (currentAuthMode === 'signup') {
                 const check = auth.verifyCode(email, code, 'signup');
                 if (check.success) {
-                    const reg = auth.register(email, tempUserData.pass, tempUserData.name);
+                    const reg = await auth.register(email, tempUserData.pass, tempUserData.name);
                     if (reg.success) {
                         showToast("Account Verified! Welcome.", "success");
                         setTimeout(() => location.href = 'index.html', 1500);
                         // Auto-login after registration
-                        auth.login(email, tempUserData.pass);
+                        await auth.login(email, tempUserData.pass);
                     } else {
                         showToast(reg.message, "error");
                     }
@@ -261,7 +261,7 @@
                 const newPass = document.getElementById('new-password').value;
                 if (!newPass) return showToast("Enter new password!", "error");
                 
-                const res = auth.resetPassword(email, code, newPass);
+                const res = await auth.resetPassword(email, code, newPass);
                 if (res.success) {
                     showToast(res.message, "success");
                     showForm('login-form');
