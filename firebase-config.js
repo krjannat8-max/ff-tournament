@@ -1,12 +1,12 @@
-// Firebase Configuration - REPLACE THE PLACEHOLDERS BELOW
-// Get this from: Firebase Console > Project Settings > General > Your Apps (Web App)
+// Firebase Configuration - CONFIGURED
 var firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAGIoAYg9cly3baR3wCulkMkB7ILYCw_PU",
+    authDomain: "ff-tournament-f40ee.firebaseapp.com",
+    projectId: "ff-tournament-f40ee",
+    storageBucket: "ff-tournament-f40ee.firebasestorage.app",
+    messagingSenderId: "440722360411",
+    appId: "1:440722360411:web:f82d1cf1bb05f59dfc177e",
+    measurementId: "G-HNNREBVZBG"
 };
 
 // Initialize Firebase
