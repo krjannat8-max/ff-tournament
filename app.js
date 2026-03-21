@@ -86,8 +86,12 @@ let currentJoinFee = 0;
 
 function joinMatch(matchId) {
     let matches = getMatches();
-    const match = matches.find(m => m.id === matchId);
-    if (!match) return;
+    // Use loose equality or string conversion to handle both string and number IDs
+    const match = matches.find(m => String(m.id) === String(matchId));
+    if (!match) {
+        console.error("Match not found:", matchId);
+        return;
+    }
 
     const fee = Number(match.entryFee) || 0;
     if (wallet.balance < fee) {
@@ -131,8 +135,9 @@ async function confirmJoinMatch() {
     }
 
     let matches = getMatches();
-    const match = matches.find(m => m.id === currentJoinMatchId);
+    const match = matches.find(m => String(m.id) === String(currentJoinMatchId));
     if (!match) {
+        console.error("Match context lost for ID:", currentJoinMatchId);
         closeGameIdModal();
         return;
     }
