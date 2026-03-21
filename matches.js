@@ -41,6 +41,44 @@ function formatMatchDate(timestamp) {
     return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
+let countdownInterval = null;
+function startCountdowns() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    function update() {
+        const now = new Date().getTime();
+        const elements = document.querySelectorAll('.countdown');
+        
+        elements.forEach(el => {
+            const startTime = parseInt(el.getAttribute('data-time'));
+            if (isNaN(startTime)) return;
+
+            const diff = startTime - now;
+            
+            if (diff <= 0) {
+                el.innerHTML = "LIVE / STARTED";
+                el.style.color = "#00ff88"; // Vibrant Green
+                el.style.textShadow = "0 0 10px rgba(0, 255, 136, 0.5)";
+            } else {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const h = hours < 10 ? '0' + hours : hours;
+                const m = minutes < 10 ? '0' + minutes : minutes;
+                const s = seconds < 10 ? '0' + seconds : seconds;
+                
+                el.innerHTML = `STARTS IN - ${h}:${m}:${s}`;
+                el.style.color = "#ff4b2b"; // Vibrant Red
+                el.style.textShadow = "0 0 10px rgba(255, 75, 43, 0.3)";
+            }
+        });
+    }
+    
+    update();
+    countdownInterval = setInterval(update, 1000);
+}
+
 function generateMatchCard(match) {
     const filled = Number(match.filledSpots) || 0;
     const total = Number(match.totalSpots) || 48;
@@ -124,14 +162,14 @@ function generateMatchCard(match) {
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
                     <div>
-                        <div style="font-size: 0.9rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        <div style="font-size: 0.95rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px;">
                             <i class="far fa-clock" style="color: #00f2ff;"></i> ${timeStr}
                         </div>
-                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.65rem; color: #ff4b2b; font-weight: 800; text-transform: uppercase;">
-                            STARTS IN - 00:00:00
+                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: #ff4b2b; font-weight: 900; text-transform: uppercase; margin-top: 2px; letter-spacing: 0.5px;">
+                            CALCULATING...
                         </div>
                     </div>
-                    <button ${btnAction} style="background: linear-gradient(135deg, #ff4b2b, #ff416c); color: white; border: none; padding: 12px 30px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255, 75, 43, 0.3); transition: 0.3s;">
+                    <button ${btnAction} style="background: linear-gradient(135deg, #ff4b2b, #ff416c); color: white; border: none; padding: 12px 35px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255, 75, 43, 0.3); transition: 0.3s;">
                         ${btnText}
                     </button>
                 </div>
