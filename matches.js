@@ -46,7 +46,6 @@ function generateMatchCard(match) {
     const total = Number(match.totalSpots) || 48;
     const isFull = filled >= total;
     
-    // Check if user is joined
     const isJoined = auth.currentUser && 
                     auth.currentUser.myMatches && 
                     auth.currentUser.myMatches.some(id => String(id) === String(match.id));
@@ -61,7 +60,7 @@ function generateMatchCard(match) {
     let roomInfoHtml = '';
     if (isJoined) {
         roomInfoHtml = `
-            <div class="room-info-card">
+            <div class="room-info-card" style="margin-bottom: 15px;">
                 <div>
                     <div class="room-data-label">ROOM ID</div>
                     <div class="room-data-val">${match.roomId || 'WAITING...'}</div>
@@ -82,55 +81,55 @@ function generateMatchCard(match) {
             </div>
             
             <div class="match-body">
-                <div class="info-grid">
+                <div class="info-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                     <div class="info-box">
-                        <div class="info-label">WIN PRIZE</div>
-                        <div class="info-val highlight">৳ ${match.winPrize}</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">WIN PRIZE</div>
+                        <div class="info-val highlight" style="color: var(--accent-yellow); font-weight: 800; font-size: 0.85rem;">৳ ${match.winPrize}</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">TYPE</div>
-                        <div class="info-val">${match.entryType}</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">TYPE</div>
+                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">${match.entryType}</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">ENTRY FEE</div>
-                        <div class="info-val highlight">৳ ${match.entryFee}</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">ENTRY FEE</div>
+                        <div class="info-val highlight" style="color: var(--accent-yellow); font-weight: 800; font-size: 0.85rem;">৳ ${match.entryFee}</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">PER KILL</div>
-                        <div class="info-val">৳ ${match.perKill}</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">PER KILL</div>
+                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">৳ ${match.perKill}</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">MAP</div>
-                        <div class="info-val">${match.map}</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">MAP</div>
+                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">${match.map}</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">VERSION</div>
-                        <div class="info-val">MOBILE</div>
+                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">VERSION</div>
+                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">MOBILE</div>
                     </div>
                 </div>
 
-                <div class="spots-bar-container">
-                    <div class="spots-labels">
+                <div class="spots-bar-container" style="margin-bottom: 20px;">
+                    <div class="spots-labels" style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px;">
                         <span style="color: var(--text-dim);">Only ${total - filled} spots left</span>
-                        <span style="color: var(--text-main);">${filled}/${total}</span>
+                        <span style="color: var(--text-main); font-weight: bold;">${filled}/${total}</span>
                     </div>
-                    <div class="pg-bar">
-                        <div class="pg-fill" style="width: ${(filled/total)*100}%"></div>
+                    <div class="pg-bar" style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div class="pg-fill" style="width: ${(filled/total)*100}%; height: 100%; background: linear-gradient(to right, var(--primary-color), var(--secondary-color)); box-shadow: 0 0 10px var(--primary-color);"></div>
                     </div>
                 </div>
 
                 ${roomInfoHtml}
 
-                <div class="match-footer">
+                <div class="match-footer" style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="time-status">
-                        <div style="font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                        <div style="font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                             <i class="far fa-clock" style="color: var(--cyber-blue);"></i> ${timeStr}
                         </div>
-                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: var(--primary-color); font-weight: 700; margin-top: 2px;">
+                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.65rem; color: var(--primary-color); font-weight: 700; margin-top: 2px;">
                             STARTS IN - 00:00:00
                         </div>
                     </div>
-                    <button class="btn-premium" ${btnAction}>${btnText}</button>
+                    <button class="btn-premium" ${btnAction} style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none; padding: 10px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);">${btnText}</button>
                 </div>
             </div>
         </div>
