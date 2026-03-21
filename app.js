@@ -1,13 +1,12 @@
 function renderMatches(filterType = 'ALL') {
     const list = document.getElementById('matches-list');
     
-    // Always get the latest matches
+    // Get the latest matches (from cache or memory)
     let allMatches = getMatches();
     
-    // 1. Update Category Counts on Home Page (Always do this)
+    // Always update home page category counts
     updateCategoryCounts(allMatches);
 
-    // 2. If we are not on a page with a matches-list, stop here
     if (!list) return;
 
     let filtered = allMatches;
@@ -15,7 +14,6 @@ function renderMatches(filterType = 'ALL') {
         filtered = allMatches.filter(m => String(m.type) === String(filterType));
     }
 
-    // Update Match List UI
     list.innerHTML = filtered.length > 0 ? 
         filtered.map(match => generateMatchCard(match)).join('') : 
         `<div style="text-align:center; padding:50px; color:var(--text-dim);">No matches found in this category</div>`;
@@ -27,7 +25,6 @@ function updateCategoryCounts(matches) {
     const categories = ['BR', 'SURVIVAL', 'LONE_WOLF', 'CS_4V4'];
     categories.forEach(type => {
         const count = matches.filter(m => String(m.type) === String(type)).length;
-        // Search for category cards that have this type in their onclick
         const countEl = document.querySelector(`.category-card[onclick*="${type}"] .cat-count`);
         if (countEl) {
             countEl.innerText = `${count} matches found`;
@@ -91,7 +88,7 @@ function joinMatch(matchId) {
 
     const fee = Number(match.entryFee) || 0;
     if (wallet.balance < fee) {
-        showToast('Insufficient balance! Please deposit TK ' + fee, 'error');
+        showToast('Insufficient balance! TK ' + fee + ' required.', 'error');
         setTimeout(() => location.href = 'wallet.html', 1500);
         return;
     }
@@ -123,7 +120,7 @@ async function confirmJoinMatch() {
     const ign = input ? input.value : '';
     
     if (!ign || ign.trim() === "") {
-        showToast('Game ID is required to join!', 'error');
+        showToast('Game ID is required!', 'error');
         return;
     }
 
@@ -140,16 +137,17 @@ async function confirmJoinMatch() {
                 console.error("[Firebase] Join error:", e);
             }
         } else {
-            let matches = getMatches();
+            let matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
             const m = matches.find(x => String(x.id) === String(currentJoinMatchId));
             if (m) {
                 m.filledSpots = (Number(m.filledSpots) || 0) + 1;
                 localStorage.setItem('ff_matches', JSON.stringify(matches));
+                window.currentMatches = matches;
                 if (auth.addJoinedMatch) auth.addJoinedMatch(currentJoinMatchId, ign);
             }
         }
         
-        showToast('Tournament Joined Successfully!', 'success');
+        showToast('Joined Successfully!', 'success');
         closeGameIdModal();
         renderMatches();
     }
@@ -158,6 +156,9 @@ async function confirmJoinMatch() {
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminUI();
     
+    // Initial render from cache
+    renderMatches();
+
     if (typeof useFirebase !== 'undefined' && useFirebase) {
         console.log("[App] Syncing matches from Firebase...");
         db.collection('matches').onSnapshot(function(snapshot) {
@@ -168,12 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 matches.push(data);
             });
             matches.sort((a, b) => (a.startTime || 0) - (b.startTime || 0));
+            
+            // Update both memory and cache
             window.currentMatches = matches; 
+            localStorage.setItem('ff_matches', JSON.stringify(matches));
+            
             renderMatches(); 
         }, function(error) {
             console.error("[Firebase] Error fetching matches:", error);
+            // Fallback to local rendering is already done by initial render
         });
-    } else {
-        renderMatches();
     }
 });

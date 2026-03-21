@@ -342,6 +342,7 @@
             if (!title) return showToast("Title is required!", "error");
 
             var newM = {
+                id: String(Date.now()), // Unique ID for local
                 title: title,
                 type: type,
                 entryType: entryType || "Solo",
@@ -357,21 +358,26 @@
                 roomPass: roomPass || ""
             };
 
-            if (typeof useFirebase !== 'undefined' && useFirebase) {
-                db.collection('matches').add(newM).then(function() {
-                    showToast("Tournament Added Globally!", "success");
-                    document.getElementById('m-title').value = '';
-                }).catch(function(e) { showToast("Global Add Failed", "error"); });
-                return;
-            }
-
+            // 1. Update LocalStorage Cache (Immediate visibility)
             var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
-            newM.id = Date.now();
             matches.push(newM);
             localStorage.setItem('ff_matches', JSON.stringify(matches));
-            showToast("Tournament Added Successfully!", "success");
-            loadAdminMatches();
-            document.getElementById('m-title').value = '';
+            window.currentMatches = matches;
+
+            // 2. Sync to Firebase (Global visibility)
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('matches').doc(newM.id).set(newM).then(function() {
+                    showToast("Tournament Added Globally!", "success");
+                    document.getElementById('m-title').value = '';
+                }).catch(function(e) { 
+                    console.error("[Firebase] Add failed:", e);
+                    showToast("Global sync failed, saved locally", "warning"); 
+                });
+            } else {
+                showToast("Tournament Added Locally!", "success");
+                document.getElementById('m-title').value = '';
+                loadAdminMatches();
+            }
         }
 
         function deleteMatch(id) {

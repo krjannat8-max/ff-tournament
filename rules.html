@@ -148,20 +148,31 @@
             var brContent = document.getElementById('rules-br-content');
             var csContent = document.getElementById('rules-cs-content');
             
+            // 1. Initial Load from LocalStorage (the original way)
+            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
+            if (settings.rules_br) brContent.innerText = settings.rules_br;
+            if (settings.rules_cs) csContent.innerText = settings.rules_cs;
+
+            // 2. Real-time Update from Firebase (if configured)
             if (typeof useFirebase !== 'undefined' && useFirebase) {
                 db.collection('settings').doc('general').onSnapshot(function(doc) {
                     if (doc.exists) {
-                        var settings = doc.data();
-                        brContent.innerText = settings.rules_br || "No Battle Royale rules set.";
-                        csContent.innerText = settings.rules_cs || "No Clash Squad rules set.";
+                        var fbSettings = doc.data();
+                        if (fbSettings.rules_br) brContent.innerText = fbSettings.rules_br;
+                        if (fbSettings.rules_cs) csContent.innerText = fbSettings.rules_cs;
+                        
+                        // Update cache
+                        settings.rules_br = fbSettings.rules_br;
+                        settings.rules_cs = fbSettings.rules_cs;
+                        localStorage.setItem('ff_settings', JSON.stringify(settings));
                     }
+                }, function(error) {
+                    console.error("[Firebase] Rules load error:", error);
                 });
-                return;
+            } else {
+                if (!settings.rules_br) brContent.innerText = "No Battle Royale rules have been set yet.";
+                if (!settings.rules_cs) csContent.innerText = "No Clash Squad rules have been set yet.";
             }
-
-            var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
-            brContent.innerText = settings.rules_br || "No Battle Royale rules have been set yet.";
-            csContent.innerText = settings.rules_cs || "No Clash Squad rules have been set yet.";
         }
 
         function switchTab(type) {

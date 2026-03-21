@@ -102,27 +102,32 @@
         function loadBkashNumber() {
             const numDisplay = document.getElementById('display-bkash-num');
             
-            if (typeof useFirebase !== 'undefined' && useFirebase) {
-                db.collection('settings').doc('general').onSnapshot(function(doc) {
-                    if (doc.exists && doc.data().bkashNumber) {
-                        numDisplay.innerText = doc.data().bkashNumber;
-                        numDisplay.style.color = "var(--accent-yellow)";
-                    } else {
-                        numDisplay.innerText = "Number not set by Admin";
-                        numDisplay.style.color = "#ef4444";
-                    }
-                }, function(error) {
-                    console.error("[Firebase] Error loading number:", error);
-                    numDisplay.innerText = "Error loading number";
-                });
-                return;
-            }
-
+            // 1. Initial Load from LocalStorage (the original way)
             const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             if (settings.bkashNumber) {
                 numDisplay.innerText = settings.bkashNumber;
                 numDisplay.style.color = "var(--accent-yellow)";
-            } else {
+            }
+
+            // 2. Real-time Update from Firebase (if configured)
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('settings').doc('general').onSnapshot(function(doc) {
+                    if (doc.exists && doc.data().bkashNumber) {
+                        const fbNum = doc.data().bkashNumber;
+                        numDisplay.innerText = fbNum;
+                        numDisplay.style.color = "var(--accent-yellow)";
+                        
+                        // Update cache
+                        settings.bkashNumber = fbNum;
+                        localStorage.setItem('ff_settings', JSON.stringify(settings));
+                    } else if (!numDisplay.innerText || numDisplay.innerText.includes("not set")) {
+                        numDisplay.innerText = "Number not set by Admin";
+                        numDisplay.style.color = "#ef4444";
+                    }
+                }, function(error) {
+                    console.error("[Firebase] Settings load error:", error);
+                });
+            } else if (!settings.bkashNumber) {
                 numDisplay.innerText = "Number not set by Admin";
                 numDisplay.style.color = "#ef4444";
             }

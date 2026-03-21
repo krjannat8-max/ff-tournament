@@ -16,10 +16,11 @@ const defaultMatches = [
     }
 ];
 
-// Global matches list
+// Global matches list - initialized from LocalStorage (the original way)
 window.currentMatches = JSON.parse(localStorage.getItem('ff_matches')) || defaultMatches;
 
 function getMatches() {
+    // Return the cached list (it will be updated by Firebase if available)
     return window.currentMatches || [];
 }
 

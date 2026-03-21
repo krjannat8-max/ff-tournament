@@ -85,23 +85,30 @@
             const list = document.getElementById('users-list');
             const warning = document.getElementById('firebase-warning');
             
-            if (useFirebase) {
-                if(warning) warning.style.display = 'none';
-                // Real-time listener for Firebase
-                db.collection('users').onSnapshot((snapshot) => {
-                    const users = [];
-                    snapshot.forEach(doc => users.push(doc.data()));
-                    renderUsersList(users);
-                }, (error) => {
-                    console.error("[Firebase] Error fetching users:", error);
-                    showToast("Failed to fetch online users", "error");
-                });
-                return;
-            }
+            // 1. Initial Load from LocalStorage (the original way)
+            const cachedUsers = JSON.parse(localStorage.getItem('ff_users')) || [];
+            renderUsersList(cachedUsers);
 
-            if(warning) warning.style.display = 'block';
-            const users = JSON.parse(localStorage.getItem('ff_users')) || [];
-            renderUsersList(users);
+            // 2. Real-time Update from Firebase (if configured)
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                if(warning) warning.style.display = 'none';
+                db.collection('users').onSnapshot(function(snapshot) {
+                    const fbUsers = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.email = doc.id;
+                        fbUsers.push(data);
+                    });
+                    
+                    // Update cache
+                    localStorage.setItem('ff_users', JSON.stringify(fbUsers));
+                    renderUsersList(fbUsers);
+                }, function(error) {
+                    console.error("[Firebase] Users load error:", error);
+                });
+            } else {
+                if(warning) warning.style.display = 'block';
+            }
         }
 
         async function renderUsersList(users) {
