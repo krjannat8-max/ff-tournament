@@ -46,58 +46,92 @@ function generateMatchCard(match) {
     const total = Number(match.totalSpots) || 48;
     const isFull = filled >= total;
     
+    // Check if user is joined
     const isJoined = auth.currentUser && 
                     auth.currentUser.myMatches && 
                     auth.currentUser.myMatches.some(id => String(id) === String(match.id));
 
     const btnText = isJoined ? 'JOINED' : (isFull ? 'FULL' : 'JOIN');
-    const btnClass = isJoined ? 'joined-btn' : (isFull ? 'full-btn' : 'join-btn');
-    const btnAction = (isJoined || isFull) ? '' : `onclick="joinMatch('${match.id}')"`;
+    const btnAction = (isJoined || isFull) ? 'disabled' : `onclick="joinMatch('${match.id}')"`;
     
     const timeStr = formatMatchTime(match.startTime);
     const dateStr = formatMatchDate(match.startTime);
 
+    // Official Premium Room Info Design
     let roomInfoHtml = '';
     if (isJoined) {
         roomInfoHtml = `
-            <div class="room-info-box" style="background: rgba(0, 242, 255, 0.1); border: 1px solid var(--cyber-blue); padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
-                <div style="font-size: 0.7rem; color: var(--cyber-blue); font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Room Details (Joined Users Only)</div>
-                <div style="display: flex; justify-content: space-around; font-family: monospace;">
-                    <div>ID: <span style="color: white; font-weight: bold;">${match.roomId || 'WAITING...'}</span></div>
-                    <div>PASS: <span style="color: white; font-weight: bold;">${match.roomPass || 'WAITING...'}</span></div>
+            <div class="room-info-card">
+                <div>
+                    <div class="room-data-label">ROOM ID</div>
+                    <div class="room-data-val">${match.roomId || 'WAITING...'}</div>
+                </div>
+                <div>
+                    <div class="room-data-label">PASSWORD</div>
+                    <div class="room-data-val">${match.roomPass || 'WAITING...'}</div>
                 </div>
             </div>
         `;
     }
 
     return `
-        <div class="match-card">
+        <div class="match-card glass">
             <div class="match-header">
-                <span class="match-title">${match.title}</span>
-                <span class="match-date"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
+                <span class="card-title" style="font-weight: 900; letter-spacing: 1px; color: var(--text-main);">${match.title}</span>
+                <span class="status-tag"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
             </div>
-            <div class="match-stats">
-                <div class="stat-item"><span class="stat-label">WIN PRIZE</span><span class="stat-value">৳ ${match.winPrize}</span></div>
-                <div class="stat-item"><span class="stat-label">TYPE</span><span class="stat-value">${match.entryType}</span></div>
-                <div class="stat-item"><span class="stat-label">ENTRY FEE</span><span class="stat-value">৳ ${match.entryFee}</span></div>
-                <div class="stat-item"><span class="stat-label">PER KILL</span><span class="stat-value">৳ ${match.perKill}</span></div>
-                <div class="stat-item"><span class="stat-label">MAP</span><span class="stat-value">${match.map}</span></div>
-                <div class="stat-item"><span class="stat-label">VERSION</span><span class="stat-value">${match.version}</span></div>
-            </div>
-            ${roomInfoHtml}
-            <div class="match-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-top: 10px;">
-                <div class="spots-info" style="flex-grow: 1;">
-                    <div class="spots-text" style="font-size: 0.7rem; color: var(--text-dim);">Only ${total - filled} spots left</div>
-                    <div class="spots-bar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 5px 0; position: relative;">
-                        <div class="spots-progress" style="width: ${(filled/total)*100}%; height: 100%; background: var(--primary-gradient); border-radius: 3px;"></div>
+            
+            <div class="match-body">
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">WIN PRIZE</div>
+                        <div class="info-val highlight">৳ ${match.winPrize}</div>
                     </div>
-                    <div class="spots-count" style="font-size: 0.75rem; font-weight: bold;">${filled}/${total}</div>
+                    <div class="info-box">
+                        <div class="info-label">TYPE</div>
+                        <div class="info-val">${match.entryType}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">ENTRY FEE</div>
+                        <div class="info-val highlight">৳ ${match.entryFee}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">PER KILL</div>
+                        <div class="info-val">৳ ${match.perKill}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">MAP</div>
+                        <div class="info-val">${match.map}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">VERSION</div>
+                        <div class="info-val">MOBILE</div>
+                    </div>
                 </div>
-                <div class="match-time-info" style="text-align: right; margin-right: 15px;">
-                    <div class="time-text" style="font-size: 0.8rem; font-weight: bold;"><i class="far fa-clock"></i> ${timeStr}</div>
-                    <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: #ff4b2b;">STARTS IN - 00:00:00</div>
+
+                <div class="spots-bar-container">
+                    <div class="spots-labels">
+                        <span style="color: var(--text-dim);">Only ${total - filled} spots left</span>
+                        <span style="color: var(--text-main);">${filled}/${total}</span>
+                    </div>
+                    <div class="pg-bar">
+                        <div class="pg-fill" style="width: ${(filled/total)*100}%"></div>
+                    </div>
                 </div>
-                <button class="${btnClass}" ${btnAction} style="padding: 10px 20px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; background: ${isJoined ? '#444' : (isFull ? '#666' : 'var(--primary-gradient)')}; color: white;">${btnText}</button>
+
+                ${roomInfoHtml}
+
+                <div class="match-footer">
+                    <div class="time-status">
+                        <div style="font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                            <i class="far fa-clock" style="color: var(--cyber-blue);"></i> ${timeStr}
+                        </div>
+                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: var(--primary-color); font-weight: 700; margin-top: 2px;">
+                            STARTS IN - 00:00:00
+                        </div>
+                    </div>
+                    <button class="btn-premium" ${btnAction}>${btnText}</button>
+                </div>
             </div>
         </div>
     `;
