@@ -37,7 +37,7 @@
     <header class="app-header">
         <a href="profile.html" style="color: white;"><i class="fas fa-arrow-left"></i></a>
         <div class="logo">WITHDRAW HISTORY</div>
-        <div></div>
+        <div onclick="initHistoryListener()" style="cursor:pointer; color:var(--cyber-blue); font-size:1.1rem; padding: 5px;"><i class="fas fa-sync-alt"></i></div>
     </header>
 
     <div class="history-container">
@@ -59,21 +59,82 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Wait for auth to be ready
+            let attempts = 0;
             const checkAuth = setInterval(() => {
-                if (auth.currentUser) {
+                attempts++;
+                if (typeof auth !== 'undefined' && auth.currentUser) {
                     clearInterval(checkAuth);
-                    loadHistory();
+                    initHistoryListener();
+                } else if (attempts > 50) { // 5 seconds timeout
+                    clearInterval(checkAuth);
+                    document.getElementById('history-list').innerHTML = `
+                        <div class="details-card" style="text-align:center; padding: 50px;">
+                            <p style="color:var(--text-dim);">Please log in to view your history.</p>
+                            <a href="login.html" style="display:inline-block; margin-top:15px; color:var(--cyber-blue);">Login Now</a>
+                        </div>`;
                 }
             }, 100);
         });
 
-        function loadHistory() {
+        function initHistoryListener() {
             const list = document.getElementById('history-list');
-            const allRequests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
+            const localRequests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
+            const userEmail = auth.currentUser.email.toLowerCase().trim();
             
-            // Filter by current user and sort newest first
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                console.log("[History] Syncing from Firebase for:", userEmail);
+                
+                try {
+                    db.collection('withdrawals')
+                        .where('userEmail', '==', userEmail)
+                        .onSnapshot(function(snapshot) {
+                            var fireRequests = [];
+                            snapshot.forEach(function(doc) {
+                                var data = doc.data();
+                                data.id = doc.id;
+                                if (data.timestamp) {
+                                    if (typeof data.timestamp.toMillis === 'function') {
+                                        data.timestamp = data.timestamp.toMillis();
+                                    } else if (data.timestamp.seconds) {
+                                        data.timestamp = data.timestamp.seconds * 1000;
+                                    }
+                                }
+                                fireRequests.push(data);
+                            });
+                            
+                            // Merge with local requests, prioritizing Firebase (by ID)
+                            const merged = [...fireRequests];
+                            localRequests.forEach(lr => {
+                                if (!merged.find(fr => fr.id === lr.id)) {
+                                    merged.push(lr);
+                                }
+                            });
+
+                            merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                            localStorage.setItem('ff_withdrawals', JSON.stringify(merged));
+                            renderHistoryUI(merged);
+                        }, function(error) {
+                            console.error("[Firebase] History query failed:", error);
+                            loadLocalHistory();
+                        });
+                } catch (e) {
+                    console.error("[History] Fatal error in listener:", e);
+                    loadLocalHistory();
+                }
+            } else {
+                loadLocalHistory();
+            }
+        }
+
+        function loadLocalHistory() {
+            const allRequests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
             let myRequests = allRequests.filter(r => r.userEmail === auth.currentUser.email);
-            myRequests.sort((a, b) => b.timestamp - a.timestamp);
+            myRequests.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            renderHistoryUI(myRequests);
+        }
+
+        function renderHistoryUI(myRequests) {
+            const list = document.getElementById('history-list');
 
             if (myRequests.length === 0) {
                 list.innerHTML = `
@@ -94,7 +155,7 @@
                 let statusIcon = "fa-clock";
                 let statusBg = "rgba(255, 184, 0, 0.1)";
 
-                if (req.status === 'approved') {
+                if (req.status === 'approved' || req.status === 'completed') {
                     statusColor = "var(--accent-green)";
                     statusText = "Completed";
                     statusIcon = "fa-check-circle";
@@ -106,7 +167,7 @@
                     statusBg = "rgba(255, 75, 43, 0.1)";
                 }
 
-                const dateObj = new Date(req.timestamp);
+                const dateObj = new Date(req.timestamp || Date.now());
                 const dateStr = dateObj.toLocaleDateString('en-GB', { 
                     day: 'numeric', 
                     month: 'short', 
@@ -118,12 +179,12 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div>
                             <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 2px;">Requested Amount</div>
-                            <div style="font-size: 1.4rem; font-weight: 800; color: white;">৳ ${req.amount.toFixed(2)}</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: white;">৳ ${(Number(req.amount) || 0).toFixed(2)}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="color: ${statusColor}; font-weight: 800; font-size: 0.8rem; padding: 6px 12px; background: ${statusBg}; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
                                 <i class="fas ${statusIcon}"></i>
-                                ${statusText.toUpperCase()}
+                                ${(statusText || "PENDING").toUpperCase()}
                             </div>
                         </div>
                     </div>

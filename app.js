@@ -1,4 +1,7 @@
-function renderMatches(filterType = 'ALL') {
+let currentFilter = 'ALL';
+
+function renderMatches(filterType = currentFilter) {
+    currentFilter = filterType;
     const list = document.getElementById('matches-list');
     
     // Get the latest matches (from cache or memory)
@@ -10,8 +13,8 @@ function renderMatches(filterType = 'ALL') {
     if (!list) return;
 
     let filtered = allMatches;
-    if (filterType !== 'ALL') {
-        filtered = allMatches.filter(m => String(m.type) === String(filterType));
+    if (currentFilter !== 'ALL') {
+        filtered = allMatches.filter(m => String(m.type) === String(currentFilter));
     }
 
     list.innerHTML = filtered.length > 0 ? 
@@ -174,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.currentMatches = matches; 
             localStorage.setItem('ff_matches', JSON.stringify(matches));
             
-            renderMatches(); 
+            renderMatches(currentFilter); 
         }, function(error) {
             console.error("[Firebase] Error fetching matches:", error);
             // Fallback to local rendering is already done by initial render

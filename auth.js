@@ -52,6 +52,7 @@ window.auth = {
 
     register: function(email, password, name) {
         var self = this;
+        email = email.toLowerCase().trim();
         if (useFirebase) {
             return auth_firebase.createUserWithEmailAndPassword(email, password)
                 .then(function() {
@@ -104,6 +105,11 @@ window.auth = {
 
     login: function(emailOrId, password) {
         var self = this;
+        
+        if (emailOrId.indexOf('@') !== -1) {
+            emailOrId = emailOrId.toLowerCase().trim();
+        }
+
         // Special Hasan Bhai Admin Check
         if (emailOrId === 'HASAN BHAI' && password === 'HASAN BHAI347116') {
             var adminUser = {

@@ -110,7 +110,7 @@
             }
         }, 100);
 
-        function submitWithdraw() {
+        async function submitWithdraw() {
             if (!auth.currentUser) return showToast("Please login first", "error");
             
             const method = document.getElementById('w-method').value;
@@ -129,13 +129,31 @@
                 return showToast("Insufficient balance!", "error");
             }
 
+            // Show loading state
+            const btn = document.querySelector('.submit-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "SUBMITTING...";
+            btn.disabled = true;
+
             // Wallet logic handles deducting balance and saving request
-            if (wallet.submitWithdrawRequest(amount, method, account)) {
-                document.getElementById('w-balance').innerText = auth.currentUser.balance;
-                document.getElementById('w-amount').value = '';
-                document.getElementById('w-account').value = '';
-                showToast("Withdraw Request Submitted!", "success");
-                setTimeout(() => location.href = 'wallet.html', 1500);
+            try {
+                const success = await wallet.submitWithdrawRequest(amount, method, account);
+                if (success) {
+                    document.getElementById('w-balance').innerText = auth.currentUser.balance;
+                    document.getElementById('w-amount').value = '';
+                    document.getElementById('w-account').value = '';
+                    showToast("Withdraw Request Submitted!", "success");
+                    setTimeout(() => location.href = 'withdraw_history.html', 1500);
+                } else {
+                    showToast("Withdrawal failed. Please try again.", "error");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("An error occurred. Please try again.", "error");
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
     </script>

@@ -18,9 +18,10 @@ const wallet = {
         
         if (useFirebase) {
             try {
+                const userEmail = auth.currentUser.email.toLowerCase().trim();
                 const newReq = {
                     id: Date.now(),
-                    userEmail: auth.currentUser.email,
+                    userEmail: userEmail,
                     userName: auth.currentUser.name,
                     amount: parseFloat(amount),
                     txid: txid,
@@ -92,8 +93,9 @@ const wallet = {
         
         if (useFirebase) {
             try {
+                const userEmail = auth.currentUser.email.toLowerCase().trim();
                 // Deduct upfront
-                const userRef = db.collection('users').doc(auth.currentUser.email);
+                const userRef = db.collection('users').doc(userEmail);
                 const userDoc = await userRef.get();
                 const currentBal = userDoc.data().balance || 0;
                 
@@ -102,8 +104,8 @@ const wallet = {
                     
                     const newReq = {
                         id: Date.now(),
-                        userEmail: auth.currentUser.email,
-                        userName: auth.currentUser.name,
+                        userEmail: userEmail,
+                        userName: auth.currentUser.name || "User",
                         amount: parseFloat(amount),
                         method: method,
                         account: account,
@@ -111,7 +113,8 @@ const wallet = {
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     };
                     await db.collection('withdrawals').add(newReq);
-                    auth.syncUser(); 
+                    await auth.syncUser(); 
+                    this.updateHeader();
                     return true;
                 }
                 return false;
