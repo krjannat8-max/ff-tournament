@@ -41,9 +41,21 @@ function filterMatches(type) {
     const titleDisplay = document.getElementById('category-title-display');
 
     if (homeView && categoryView) {
-        homeView.style.display = 'none';
-        categoryView.style.display = 'block';
-        window.scrollTo(0, 0);
+        // Exit animation for home
+        homeView.classList.add('section-exit');
+        
+        setTimeout(() => {
+            homeView.style.display = 'none';
+            homeView.classList.remove('section-exit');
+            
+            categoryView.style.display = 'block';
+            categoryView.classList.add('section-animate');
+            window.scrollTo(0, 0);
+            
+            setTimeout(() => {
+                categoryView.classList.remove('section-animate');
+            }, 500);
+        }, 300);
     }
 
     const titles = {
@@ -62,9 +74,21 @@ function showHome() {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
-        homeView.style.display = 'block';
-        categoryView.style.display = 'none';
-        window.scrollTo(0, 0);
+        // Exit animation for category view
+        categoryView.classList.add('section-exit');
+        
+        setTimeout(() => {
+            categoryView.style.display = 'none';
+            categoryView.classList.remove('section-exit');
+            
+            homeView.style.display = 'block';
+            homeView.classList.add('section-animate');
+            window.scrollTo(0, 0);
+            
+            setTimeout(() => {
+                homeView.classList.remove('section-animate');
+            }, 500);
+        }, 300);
     }
     renderMatches('ALL');
 }

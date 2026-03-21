@@ -487,9 +487,59 @@ body::before {
     to { opacity: 0; transform: translateY(-20px) scale(0.9); }
 }
 
+/* Section Transition Animations */
+.section-animate {
+    animation: sectionFadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes sectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+        filter: blur(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.section-exit {
+    animation: sectionFadeOut 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes sectionFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-15px) scale(0.98);
+        filter: blur(5px);
+    }
+}
+
+/* Page Load Animation for whole body */
+.page-transition {
+    animation: pageSlideIn 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 /* Sub-page Navigation */
 #category-view {
-    animation: slideIn 0.4s ease-out;
+    /* Animation handled by JS class injection now */
 }
 
 @keyframes slideIn {
