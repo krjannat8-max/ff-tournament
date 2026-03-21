@@ -56,80 +56,84 @@ function generateMatchCard(match) {
     const timeStr = formatMatchTime(match.startTime);
     const dateStr = formatMatchDate(match.startTime);
 
-    // Official Premium Room Info Design
     let roomInfoHtml = '';
     if (isJoined) {
         roomInfoHtml = `
-            <div class="room-info-card" style="margin-bottom: 15px;">
-                <div>
-                    <div class="room-data-label">ROOM ID</div>
-                    <div class="room-data-val">${match.roomId || 'WAITING...'}</div>
-                </div>
-                <div>
-                    <div class="room-data-label">PASSWORD</div>
-                    <div class="room-data-val">${match.roomPass || 'WAITING...'}</div>
+            <div style="background: rgba(0, 242, 255, 0.1); border: 1px dashed #00f2ff; border-radius: 12px; padding: 12px; margin: 15px 0;">
+                <div style="font-size: 0.65rem; color: #00f2ff; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Room Access Granted</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="text-align: left;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">ID</div>
+                        <div style="font-size: 0.9rem; color: #fff; font-weight: 900; font-family: monospace;">${match.roomId || 'WAITING'}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">PASS</div>
+                        <div style="font-size: 0.9rem; color: #ffd700; font-weight: 900; font-family: monospace;">${match.roomPass || 'WAITING'}</div>
+                    </div>
                 </div>
             </div>
         `;
     }
 
     return `
-        <div class="match-card glass">
-            <div class="match-header">
-                <span class="card-title" style="font-weight: 900; letter-spacing: 1px; color: var(--text-main);">${match.title}</span>
-                <span class="status-tag"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
+        <div style="background: #1a1c23; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+            <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-weight: 900; font-size: 0.95rem; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">${match.title}</span>
+                <span style="font-size: 0.7rem; color: #ffd700; font-weight: 800; background: rgba(255, 215, 0, 0.1); padding: 4px 10px; border-radius: 6px;"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
             </div>
             
-            <div class="match-body">
-                <div class="info-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">WIN PRIZE</div>
-                        <div class="info-val highlight" style="color: var(--accent-yellow); font-weight: 800; font-size: 0.85rem;">৳ ${match.winPrize}</div>
+            <div style="padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">WIN PRIZE</div>
+                        <div style="font-size: 0.85rem; color: #00ff88; font-weight: 900;">৳${match.winPrize}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">TYPE</div>
-                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">${match.entryType}</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">TYPE</div>
+                        <div style="font-size: 0.85rem; color: #fff; font-weight: 900;">${match.entryType}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">ENTRY FEE</div>
-                        <div class="info-val highlight" style="color: var(--accent-yellow); font-weight: 800; font-size: 0.85rem;">৳ ${match.entryFee}</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">ENTRY FEE</div>
+                        <div style="font-size: 0.85rem; color: #ff4b2b; font-weight: 900;">৳${match.entryFee}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">PER KILL</div>
-                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">৳ ${match.perKill}</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">PER KILL</div>
+                        <div style="font-size: 0.85rem; color: #fff; font-weight: 900;">৳${match.perKill}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">MAP</div>
-                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">${match.map}</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">MAP</div>
+                        <div style="font-size: 0.85rem; color: #fff; font-weight: 900;">${match.map}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label" style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase;">VERSION</div>
-                        <div class="info-val" style="font-weight: 800; font-size: 0.85rem;">MOBILE</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.4); margin-bottom: 4px;">VERSION</div>
+                        <div style="font-size: 0.85rem; color: #00f2ff; font-weight: 900;">MOBILE</div>
                     </div>
                 </div>
 
-                <div class="spots-bar-container" style="margin-bottom: 20px;">
-                    <div class="spots-labels" style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px;">
-                        <span style="color: var(--text-dim);">Only ${total - filled} spots left</span>
-                        <span style="color: var(--text-main); font-weight: bold;">${filled}/${total}</span>
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 8px; font-weight: 800;">
+                        <span style="color: rgba(255,255,255,0.4);">ONLY ${total - filled} SPOTS LEFT</span>
+                        <span style="color: #fff;">${filled}/${total}</span>
                     </div>
-                    <div class="pg-bar" style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
-                        <div class="pg-fill" style="width: ${(filled/total)*100}%; height: 100%; background: linear-gradient(to right, var(--primary-color), var(--secondary-color)); box-shadow: 0 0 10px var(--primary-color);"></div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div style="width: ${(filled/total)*100}%; height: 100%; background: linear-gradient(to right, #ff4b2b, #ff416c); box-shadow: 0 0 10px rgba(255, 75, 43, 0.5);"></div>
                     </div>
                 </div>
 
                 ${roomInfoHtml}
 
-                <div class="match-footer" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div class="time-status">
-                        <div style="font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-                            <i class="far fa-clock" style="color: var(--cyber-blue);"></i> ${timeStr}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                    <div>
+                        <div style="font-size: 0.9rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <i class="far fa-clock" style="color: #00f2ff;"></i> ${timeStr}
                         </div>
-                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.65rem; color: var(--primary-color); font-weight: 700; margin-top: 2px;">
+                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.65rem; color: #ff4b2b; font-weight: 800; text-transform: uppercase;">
                             STARTS IN - 00:00:00
                         </div>
                     </div>
-                    <button class="btn-premium" ${btnAction} style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none; padding: 10px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);">${btnText}</button>
+                    <button ${btnAction} style="background: linear-gradient(135deg, #ff4b2b, #ff416c); color: white; border: none; padding: 12px 30px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255, 75, 43, 0.3); transition: 0.3s;">
+                        ${btnText}
+                    </button>
                 </div>
             </div>
         </div>
