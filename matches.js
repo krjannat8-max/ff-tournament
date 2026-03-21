@@ -45,35 +45,39 @@ let countdownInterval = null;
 function startCountdowns() {
     if (countdownInterval) clearInterval(countdownInterval);
     
-    function update() {
-        const now = new Date().getTime();
+    const update = () => {
+        const now = Date.now();
         const elements = document.querySelectorAll('.countdown');
         
         elements.forEach(el => {
-            const startTime = parseInt(el.getAttribute('data-time'));
-            if (isNaN(startTime)) return;
+            const startTimeStr = el.getAttribute('data-time');
+            const startTime = parseInt(startTimeStr);
+            
+            if (isNaN(startTime) || startTime === 0) {
+                el.innerHTML = "TIME NOT SET";
+                return;
+            }
 
             const diff = startTime - now;
             
             if (diff <= 0) {
-                el.innerHTML = "LIVE / STARTED";
-                el.style.color = "#00ff88"; // Vibrant Green
-                el.style.textShadow = "0 0 10px rgba(0, 255, 136, 0.5)";
+                el.innerHTML = '<span style="color: #00ff88; font-weight: 900; background: rgba(0, 255, 136, 0.1); padding: 2px 8px; border-radius: 4px; animation: blink 1s infinite; border: 1px solid rgba(0, 255, 136, 0.3);">● LIVE NOW</span>';
+                el.style.textShadow = "0 0 10px rgba(0, 255, 136, 0.6)";
             } else {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
                 
-                const h = hours < 10 ? '0' + hours : hours;
-                const m = minutes < 10 ? '0' + minutes : minutes;
-                const s = seconds < 10 ? '0' + seconds : seconds;
+                const h = hours.toString().padStart(2, '0');
+                const m = minutes.toString().padStart(2, '0');
+                const s = seconds.toString().padStart(2, '0');
                 
                 el.innerHTML = `STARTS IN - ${h}:${m}:${s}`;
-                el.style.color = "#ff4b2b"; // Vibrant Red
-                el.style.textShadow = "0 0 10px rgba(255, 75, 43, 0.3)";
+                el.style.color = "#ff4b2b";
+                el.style.textShadow = "0 0 10px rgba(255, 75, 43, 0.4)";
             }
         });
-    }
+    };
     
     update();
     countdownInterval = setInterval(update, 1000);
@@ -160,13 +164,13 @@ function generateMatchCard(match) {
 
                 ${roomInfoHtml}
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                    <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px;">
+                    <div class="time-info">
                         <div style="font-size: 0.95rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px;">
                             <i class="far fa-clock" style="color: #00f2ff;"></i> ${timeStr}
                         </div>
-                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: #ff4b2b; font-weight: 900; text-transform: uppercase; margin-top: 2px; letter-spacing: 0.5px;">
-                            CALCULATING...
+                        <div class="countdown" data-time="${match.startTime}" style="font-size: 0.7rem; color: #ff4b2b; font-weight: 900; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">
+                            SYNCING...
                         </div>
                     </div>
                     <button ${btnAction} style="background: linear-gradient(135deg, #ff4b2b, #ff416c); color: white; border: none; padding: 12px 35px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255, 75, 43, 0.3); transition: 0.3s;">
