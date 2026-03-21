@@ -181,15 +181,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof useFirebase !== 'undefined' && useFirebase) {
         console.log("[App] Syncing matches from Firebase...");
-        db.collection('matches').orderBy('startTime', 'asc').onSnapshot(function(snapshot) {
+        // Use a simpler query to ensure data is fetched correctly
+        db.collection('matches').onSnapshot(function(snapshot) {
             var matches = [];
             snapshot.forEach(function(doc) {
                 var data = doc.data();
-                data.id = doc.id; // Correctly map Firestore ID
+                data.id = doc.id;
                 matches.push(data);
             });
-            window.currentMatches = matches; // Global update
+            // Sort manually to be safe
+            matches.sort((a, b) => (a.startTime || 0) - (b.startTime || 0));
+            
+            window.currentMatches = matches; 
+            console.log("[App] Matches updated:", matches.length);
             renderMatches();
+        }, function(error) {
+            console.error("[Firebase] Error fetching matches:", error);
         });
     } else {
         renderMatches();
