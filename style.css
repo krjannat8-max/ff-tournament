@@ -487,53 +487,56 @@ body::before {
     to { opacity: 0; transform: translateY(-20px) scale(0.9); }
 }
 
-/* Section Transition Animations */
+/* Ultra-Premium Section Transition Animations (Slow-Motion) */
 .section-animate {
-    animation: sectionFadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: premiumSectionIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes sectionFadeIn {
-    from {
+@keyframes premiumSectionIn {
+    0% {
         opacity: 0;
-        transform: translateY(15px) scale(0.98);
-        filter: blur(5px);
+        transform: scale(0.92) translateY(30px);
+        filter: blur(15px) brightness(0.5);
     }
-    to {
+    100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
-        filter: blur(0);
+        transform: scale(1) translateY(0);
+        filter: blur(0) brightness(1);
     }
 }
 
 .section-exit {
-    animation: sectionFadeOut 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: premiumSectionOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes sectionFadeOut {
-    from {
+@keyframes premiumSectionOut {
+    0% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: scale(1) translateY(0);
+        filter: blur(0);
     }
-    to {
+    100% {
         opacity: 0;
-        transform: translateY(-15px) scale(0.98);
-        filter: blur(5px);
+        transform: scale(1.05) translateY(-30px);
+        filter: blur(15px) brightness(1.5);
     }
 }
 
-/* Page Load Animation for whole body */
+/* Smooth Page Load Animation */
 .page-transition {
-    animation: pageSlideIn 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: premiumPageIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes pageSlideIn {
-    from {
+@keyframes premiumPageIn {
+    0% {
         opacity: 0;
-        transform: translateX(20px);
+        transform: translateX(40px);
+        filter: grayscale(1) blur(10px);
     }
-    to {
+    100% {
         opacity: 1;
         transform: translateX(0);
+        filter: grayscale(0) blur(0);
     }
 }
 

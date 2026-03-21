@@ -54,8 +54,8 @@ function filterMatches(type) {
             
             setTimeout(() => {
                 categoryView.classList.remove('section-animate');
-            }, 500);
-        }, 300);
+            }, 800);
+        }, 500);
     }
 
     const titles = {
@@ -87,8 +87,8 @@ function showHome() {
             
             setTimeout(() => {
                 homeView.classList.remove('section-animate');
-            }, 500);
-        }, 300);
+            }, 800);
+        }, 500);
     }
     renderMatches('ALL');
 }
