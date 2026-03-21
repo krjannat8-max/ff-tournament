@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAdminUI();
     
     if (typeof useFirebase !== 'undefined' && useFirebase) {
-        console.log("[App] Firebase real-time sync active.");
+        console.log("[App] Syncing matches from Firebase...");
         db.collection('matches').onSnapshot(function(snapshot) {
             var matches = [];
             snapshot.forEach(function(doc) {
@@ -167,8 +167,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 data.id = doc.id;
                 matches.push(data);
             });
+            matches.sort((a, b) => (a.startTime || 0) - (b.startTime || 0));
             window.currentMatches = matches; 
             renderMatches(); 
+        }, function(error) {
+            console.error("[Firebase] Error fetching matches:", error);
         });
     } else {
         renderMatches();

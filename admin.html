@@ -468,14 +468,14 @@
             if (typeof useFirebase !== 'undefined' && useFirebase) {
                 db.collection('settings').doc('general').set({ bkashNumber: num }, { merge: true }).then(function() {
                     showToast("Global bKash Number Saved!", "success");
-                });
+                }).catch(e => showToast("Save failed", "error"));
                 return;
             }
 
             var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             settings.bkashNumber = num;
             localStorage.setItem('ff_settings', JSON.stringify(settings));
-            showToast("bKash Number Saved!", "success");
+            showToast("Local bKash Number Saved!", "success");
         }
 
         function saveRules() {
