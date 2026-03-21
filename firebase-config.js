@@ -11,11 +11,17 @@ var firebaseConfig = {
 
 // Initialize Firebase
 if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    
-    // EXPOSE GLOBALLY for use in matches.js, app.js, wallet.js etc.
-    window.db = firebase.firestore();
-    window.auth_firebase = firebase.auth();
-    
-    console.log("[Firebase] Centralized Database Initialized.");
+    try {
+        firebase.initializeApp(firebaseConfig);
+        
+        // EXPOSE GLOBALLY for use in matches.js, app.js, wallet.js etc.
+        window.db = firebase.firestore();
+        window.auth_firebase = firebase.auth();
+        
+        console.log("[Firebase] Centralized Database Initialized Successfully.");
+    } catch (e) {
+        console.error("[Firebase] Initialization error:", e.message);
+    }
+} else {
+    console.error("[Firebase] Firebase SDK NOT LOADED! Make sure script tags are correct.");
 }

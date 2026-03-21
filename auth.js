@@ -10,22 +10,35 @@ if (!localStorage.getItem('ff_device_id')) {
 var CURRENT_DEVICE_ID = localStorage.getItem('ff_device_id');
 
 // Firebase Detection
-var useFirebase = (
-    typeof firebase !== 'undefined' && 
-    firebase.apps.length > 0 && 
-    typeof firebaseConfig !== 'undefined' &&
-    firebaseConfig.apiKey !== "YOUR_API_KEY" &&
-    firebaseConfig.apiKey !== ""
-);
+var useFirebase = false;
+try {
+    useFirebase = (
+        typeof firebase !== 'undefined' && 
+        firebase.apps.length > 0 && 
+        typeof firebaseConfig !== 'undefined' &&
+        firebaseConfig.apiKey && 
+        firebaseConfig.apiKey !== "YOUR_API_KEY" &&
+        firebaseConfig.apiKey.trim() !== ""
+    );
+} catch (e) {
+    console.error("[Auth] Firebase check failed:", e);
+    useFirebase = false;
+}
 
 if (!useFirebase) {
-    console.warn("[Auth] Firebase not configured. Data will NOT sync across devices. Check firebase-config.js");
+    console.warn("[Auth] APP IS IN OFFLINE MODE. Data will stay on this device only.");
 }
 
 var db, auth_firebase;
 if (useFirebase) {
-    db = firebase.firestore();
-    auth_firebase = firebase.auth();
+    try {
+        db = firebase.firestore();
+        auth_firebase = firebase.auth();
+        console.log("[Auth] Firebase connected successfully! Online sync active.");
+    } catch (e) {
+        console.error("[Auth] Firebase initialization error:", e);
+        useFirebase = false;
+    }
 }
 
 // Initialize EmailJS if the SDK is loaded
