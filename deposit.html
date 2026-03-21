@@ -100,10 +100,28 @@
         }
 
         function loadBkashNumber() {
-            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             const numDisplay = document.getElementById('display-bkash-num');
+            
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                db.collection('settings').doc('general').onSnapshot(function(doc) {
+                    if (doc.exists && doc.data().bkashNumber) {
+                        numDisplay.innerText = doc.data().bkashNumber;
+                        numDisplay.style.color = "var(--accent-yellow)";
+                    } else {
+                        numDisplay.innerText = "Number not set by Admin";
+                        numDisplay.style.color = "#ef4444";
+                    }
+                }, function(error) {
+                    console.error("[Firebase] Error loading number:", error);
+                    numDisplay.innerText = "Error loading number";
+                });
+                return;
+            }
+
+            const settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             if (settings.bkashNumber) {
                 numDisplay.innerText = settings.bkashNumber;
+                numDisplay.style.color = "var(--accent-yellow)";
             } else {
                 numDisplay.innerText = "Number not set by Admin";
                 numDisplay.style.color = "#ef4444";

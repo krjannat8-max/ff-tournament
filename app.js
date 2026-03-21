@@ -1,37 +1,37 @@
-
 function renderMatches(filterType = 'ALL') {
     const list = document.getElementById('matches-list');
-    const homeList = document.getElementById('home-matches-list');
+    
+    // Always get the latest matches
+    let allMatches = getMatches();
+    
+    // 1. Update Category Counts on Home Page (Always do this)
+    updateCategoryCounts(allMatches);
+
+    // 2. If we are not on a page with a matches-list, stop here
     if (!list) return;
 
-    let allMatches = getMatches();
     let filtered = allMatches;
-    
     if (filterType !== 'ALL') {
-        filtered = allMatches.filter(m => m.type === filterType);
+        filtered = allMatches.filter(m => String(m.type) === String(filterType));
     }
 
-    // Update Category View
+    // Update Match List UI
     list.innerHTML = filtered.length > 0 ? 
         filtered.map(match => generateMatchCard(match)).join('') : 
         `<div style="text-align:center; padding:50px; color:var(--text-dim);">No matches found in this category</div>`;
     
-    
-    // Also update Home Highlights (Top 3) - REMOVED AS PER USER REQUEST
-    // if (homeList) {
-    //     homeList.innerHTML = allMatches.slice(0, 3).map(match => generateMatchCard(match)).join('');
-    // }
-
-    startCountdowns();
-    updateCategoryCounts(allMatches);
+    if (typeof startCountdowns === 'function') startCountdowns();
 }
 
 function updateCategoryCounts(matches) {
     const categories = ['BR', 'SURVIVAL', 'LONE_WOLF', 'CS_4V4'];
     categories.forEach(type => {
-        const count = matches.filter(m => m.type === type).length;
+        const count = matches.filter(m => String(m.type) === String(type)).length;
+        // Search for category cards that have this type in their onclick
         const countEl = document.querySelector(`.category-card[onclick*="${type}"] .cat-count`);
-        if (countEl) countEl.innerText = `${count} matches found`;
+        if (countEl) {
+            countEl.innerText = `${count} matches found`;
+        }
     });
 }
 
@@ -46,7 +46,6 @@ function filterMatches(type) {
         window.scrollTo(0, 0);
     }
 
-    // Set Title
     const titles = {
         'BR': 'BR CUSTOM TOURNAMENTS',
         'SURVIVAL': 'CS 2 VS 2 BATTLE',
@@ -70,14 +69,15 @@ function showHome() {
     renderMatches('ALL');
 }
 
-// Show Admin button if admin is logged in
 function checkAdminUI() {
     if (auth.currentUser && auth.currentUser.isAdmin) {
         const header = document.querySelector('.app-header');
-        const adminBtn = document.createElement('a');
-        adminBtn.href = 'admin.html';
-        adminBtn.innerHTML = '<i class="fas fa-cog" style="color:var(--text-dim); margin-right:15px; font-size:1.2rem;"></i>';
-        header.insertBefore(adminBtn, header.firstChild);
+        if (header && !header.querySelector('a[href="admin.html"]')) {
+            const adminBtn = document.createElement('a');
+            adminBtn.href = 'admin.html';
+            adminBtn.innerHTML = '<i class="fas fa-cog" style="color:var(--text-dim); margin-right:15px; font-size:1.2rem;"></i>';
+            header.insertBefore(adminBtn, header.firstChild);
+        }
     }
 }
 
@@ -86,12 +86,8 @@ let currentJoinFee = 0;
 
 function joinMatch(matchId) {
     let matches = getMatches();
-    // Use loose equality or string conversion to handle both string and number IDs
     const match = matches.find(m => String(m.id) === String(matchId));
-    if (!match) {
-        console.error("Match not found:", matchId);
-        return;
-    }
+    if (!match) return showToast("Match details not found!", "error");
 
     const fee = Number(match.entryFee) || 0;
     if (wallet.balance < fee) {
@@ -100,7 +96,6 @@ function joinMatch(matchId) {
         return;
     }
 
-    // Prepare to show custom modal
     currentJoinMatchId = matchId;
     currentJoinFee = fee;
     
@@ -108,7 +103,7 @@ function joinMatch(matchId) {
     const input = document.getElementById('modal-ign-input');
     
     if (modal && input) {
-        input.value = ''; // Clear previous
+        input.value = ''; 
         modal.style.display = 'flex';
         setTimeout(() => input.focus(), 100);
     }
@@ -116,9 +111,7 @@ function joinMatch(matchId) {
 
 function closeGameIdModal() {
     const modal = document.getElementById('game-id-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
     currentJoinMatchId = null;
     currentJoinFee = 0;
 }
@@ -134,14 +127,6 @@ async function confirmJoinMatch() {
         return;
     }
 
-    let matches = getMatches();
-    const match = matches.find(m => String(m.id) === String(currentJoinMatchId));
-    if (!match) {
-        console.error("Match context lost for ID:", currentJoinMatchId);
-        closeGameIdModal();
-        return;
-    }
-
     const withdrawn = await wallet.withdraw(currentJoinFee);
     if (withdrawn) {
         if (typeof useFirebase !== 'undefined' && useFirebase) {
@@ -150,29 +135,23 @@ async function confirmJoinMatch() {
                 await matchRef.update({
                     filledSpots: firebase.firestore.FieldValue.increment(1)
                 });
-                
-                if (auth.addJoinedMatch) {
-                    await auth.addJoinedMatch(currentJoinMatchId, ign);
-                }
+                if (auth.addJoinedMatch) await auth.addJoinedMatch(currentJoinMatchId, ign);
             } catch (e) {
-                console.error("[Firebase] Match join failed:", e);
-                showToast('Failed to join match in cloud', 'error');
+                console.error("[Firebase] Join error:", e);
             }
         } else {
-            match.filledSpots = (Number(match.filledSpots) || 0) + 1;
-            match.totalSpots = Number(match.totalSpots) || 48;
-            localStorage.setItem('ff_matches', JSON.stringify(matches));
-            
-            if (auth.addJoinedMatch) {
-                auth.addJoinedMatch(currentJoinMatchId, ign);
+            let matches = getMatches();
+            const m = matches.find(x => String(x.id) === String(currentJoinMatchId));
+            if (m) {
+                m.filledSpots = (Number(m.filledSpots) || 0) + 1;
+                localStorage.setItem('ff_matches', JSON.stringify(matches));
+                if (auth.addJoinedMatch) auth.addJoinedMatch(currentJoinMatchId, ign);
             }
         }
         
         showToast('Tournament Joined Successfully!', 'success');
         closeGameIdModal();
         renderMatches();
-    } else {
-        closeGameIdModal();
     }
 }
 
@@ -180,8 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAdminUI();
     
     if (typeof useFirebase !== 'undefined' && useFirebase) {
-        console.log("[App] Syncing matches from Firebase...");
-        // Use a simpler query to ensure data is fetched correctly
+        console.log("[App] Firebase real-time sync active.");
         db.collection('matches').onSnapshot(function(snapshot) {
             var matches = [];
             snapshot.forEach(function(doc) {
@@ -189,14 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 data.id = doc.id;
                 matches.push(data);
             });
-            // Sort manually to be safe
-            matches.sort((a, b) => (a.startTime || 0) - (b.startTime || 0));
-            
             window.currentMatches = matches; 
-            console.log("[App] Matches updated:", matches.length);
-            renderMatches();
-        }, function(error) {
-            console.error("[Firebase] Error fetching matches:", error);
+            renderMatches(); 
         });
     } else {
         renderMatches();

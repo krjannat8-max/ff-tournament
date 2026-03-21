@@ -67,8 +67,6 @@ var currentMatches = [];
 
 function getMatches() {
     if (typeof useFirebase !== 'undefined' && useFirebase) {
-        // In Firebase mode, we rely on the onSnapshot listener 
-        // to have populated currentMatches already from index.html/app.js
         return currentMatches;
     }
     var m = localStorage.getItem('ff_matches');
@@ -81,7 +79,7 @@ function formatMatchTime(timestamp) {
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = hours ? hours : 12; 
     const strMinutes = minutes < 10 ? '0' + minutes : minutes;
     return hours + ':' + strMinutes + ' ' + ampm;
 }
@@ -116,8 +114,8 @@ function generateMatchCard(match) {
             <div class="room-info-box" style="background: rgba(0, 242, 255, 0.1); border: 1px solid var(--cyber-blue); padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
                 <div style="font-size: 0.7rem; color: var(--cyber-blue); font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Room Details (Joined Users Only)</div>
                 <div style="display: flex; justify-content: space-around; font-family: monospace;">
-                    <div>ID: <span style="color: white; font-weight: bold;">${match.roomId || 'Wait...'}</span></div>
-                    <div>PASS: <span style="color: white; font-weight: bold;">${match.roomPass || 'Wait...'}</span></div>
+                    <div>ID: <span style="color: white; font-weight: bold;">${match.roomId || 'WAITING...'}</span></div>
+                    <div>PASS: <span style="color: white; font-weight: bold;">${match.roomPass || 'WAITING...'}</span></div>
                 </div>
             </div>
         `;
@@ -175,132 +173,4 @@ function generateMatchCard(match) {
             </div>
         </div>
     `;
-}
-    
-    const isFull = filled >= total;
-    const progress = (filled / total) * 100;
-    
-    // Room Info Logic
-    let roomInfoHtml = '';
-    if (isJoined) {
-        const userIgn = (auth.currentUser && auth.currentUser.ignMap) ? 
-                        auth.currentUser.ignMap[match.id] : 'N/A';
-        
-        const roomData = (match.roomId || match.roomPass) ? `
-            <div>
-                <div class="room-data-label">Room ID</div>
-                <div class="room-data-val">${match.roomId || 'WAITING...'}</div>
-            </div>
-            <div>
-                <div class="room-data-label">Password</div>
-                <div class="room-data-val">${match.roomPass || 'WAITING...'}</div>
-            </div>
-        ` : `
-            <div style="grid-column: span 2; text-align:center; color:var(--text-dim); font-size:0.75rem; padding: 5px 0;">
-                <i class="fas fa-clock"></i> Room data will be updated 15m before start.
-            </div>
-        `;
-
-        roomInfoHtml = `
-            <div class="room-info-card" style="margin-bottom: 10px;">
-                <div style="grid-column: span 2; border-bottom: 1px solid rgba(255,171,0,0.2); padding-bottom: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span class="room-data-label" style="margin:0;">MY GAME ID:</span>
-                    <span style="color:var(--accent-yellow); font-weight:800; font-family:monospace;">${userIgn}</span>
-                </div>
-                ${roomData}
-            </div>
-        `;
-    }
-
-    return `
-        <div class="match-card glass">
-            <div class="match-header">
-                <span style="font-weight: 800; font-size: 0.95rem; color: var(--primary-color);">${match.title}</span>
-                <span style="font-size: 0.7rem; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; color: var(--accent-yellow);"><i class="far fa-calendar-alt"></i> ${formatMatchDate(match.startTime)}</span>
-            </div>
-            <div class="match-body">
-                <div class="info-grid">
-                    <div class="info-box">
-                        <div class="info-label">Win Prize</div>
-                        <div class="info-val highlight">৳ ${match.winPrize || 0}</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Type</div>
-                        <div class="info-val">${match.entryType || 'Solo'}</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Entry Fee</div>
-                        <div class="info-val highlight">৳ ${match.entryFee || 0}</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Per Kill</div>
-                        <div class="info-val">৳ ${match.perKill || 0}</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Map</div>
-                        <div class="info-val">${match.map || 'Bermuda'}</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Version</div>
-                        <div class="info-val">${match.version || 'MOBILE'}</div>
-                    </div>
-                </div>
-
-                <div class="spots-bar-container">
-                    <div class="spots-labels">
-                        <span>Only ${total - filled} spots left</span>
-                        <span style="color: var(--text-dim);">${filled}/${total}</span>
-                    </div>
-                    <div class="pg-bar">
-                        <div class="pg-fill" style="width: ${progress}%"></div>
-                    </div>
-                </div>
-
-                ${roomInfoHtml}
-
-                <div class="match-footer" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 10px;">
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <div style="font-size: 0.8rem; font-weight: 800; color: white;"><i class="far fa-clock"></i> ${formatMatchTime(match.startTime)}</div>
-                        <div class="status-tag" id="timer-${match.id}" style="font-size: 0.65rem; margin: 0; background: none; border: none; padding: 0;">STARTS IN - ...</div>
-                    </div>
-                    
-                    ${isJoined ? `
-                        <button class="btn-premium" style="background: var(--accent-green); color: black;" disabled>
-                            <i class="fas fa-check-circle"></i> JOINED
-                        </button>
-                    ` : `
-                        <button class="btn-premium" ${isFull ? 'disabled' : ''} onclick="joinMatch(${match.id})">
-                            ${isFull ? 'MATCH FULL' : 'JOIN'}
-                        </button>
-                    `}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function startCountdowns() {
-    const matches = getMatches();
-    matches.forEach(match => {
-        const timerEl = document.getElementById(`timer-${match.id}`);
-        if (!timerEl) return;
-
-        const update = () => {
-            const now = new Date().getTime();
-            const distance = match.startTime - now;
-
-            if (distance < 0) {
-                timerEl.innerHTML = "STARTED";
-                return;
-            }
-
-            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((distance % (1000 * 60)) / 1000);
-
-            timerEl.innerHTML = `STARTS IN - ${h}h:${m}m:${s}s`;
-        };
-        update();
-        setInterval(update, 1000);
-    });
 }
