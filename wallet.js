@@ -52,8 +52,28 @@ const wallet = {
         return true;
     },
 
-    withdraw(amount) {
+    async withdraw(amount) {
         if (!auth.currentUser) return false;
+
+        if (useFirebase) {
+            try {
+                const userRef = db.collection('users').doc(auth.currentUser.email);
+                const userDoc = await userRef.get();
+                const currentBal = userDoc.data().balance || 0;
+                
+                if (currentBal >= amount) {
+                    await userRef.update({ balance: currentBal - amount });
+                    auth.syncUser();
+                    this.updateHeader();
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error("[Firebase] Withdraw failed:", error);
+                return false;
+            }
+        }
+
         const users = JSON.parse(localStorage.getItem('ff_users')) || [];
         const userIndex = users.findIndex(u => u.email === auth.currentUser.email);
         
@@ -102,7 +122,8 @@ const wallet = {
         }
 
         // Deduct upfront to prevent double spending
-        if (this.withdraw(amount)) {
+        const withdrawn = await this.withdraw(amount);
+        if (withdrawn) {
             const requests = JSON.parse(localStorage.getItem('ff_withdrawals')) || [];
             const newReq = {
                 id: Date.now(),

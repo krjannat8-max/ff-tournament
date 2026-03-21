@@ -143,6 +143,10 @@
     </div>
 
     <div class="admin-container">
+        <div id="firebase-warning" style="display:none; background: #ff4b2b22; border: 1px solid #ff4b2b; color: #ff4b2b; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem; text-align: center;">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Offline Mode:</strong> Firebase is not configured. Your tournaments will NOT be visible to other users. 
+            <br><small>Please update <code>firebase-config.js</code> to enable global sync.</small>
+        </div>
         <div class="form-card">
             <h3 style="margin-bottom: 20px;">Create New Match</h3>
             <div class="form-field">
@@ -252,8 +256,10 @@
 
         function loadAdminMatches() {
             var list = document.getElementById('admin-match-list');
+            var warning = document.getElementById('firebase-warning');
             
             if (typeof useFirebase !== 'undefined' && useFirebase) {
+                if(warning) warning.style.display = 'none';
                 // Real-time listener for Settings
                 db.collection('settings').doc('general').onSnapshot(function(doc) {
                     if (doc.exists) {
@@ -277,6 +283,7 @@
                 return;
             }
 
+            if(warning) warning.style.display = 'block';
             var matches = JSON.parse(localStorage.getItem('ff_matches')) || [];
             var settings = JSON.parse(localStorage.getItem('ff_settings')) || {};
             if (settings.bkashNumber) document.getElementById('admin-bkash-num').value = settings.bkashNumber;

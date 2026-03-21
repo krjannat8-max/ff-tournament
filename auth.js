@@ -241,11 +241,21 @@ window.auth = {
                 window.location.href = 'login.html';
             }
         } else {
-            var users = JSON.parse(localStorage.getItem('ff_users')) || [];
-            var user = users.find(function(u) { return u.email === this.currentUser.email; }.bind(this));
-            if (user && user.isBanned) {
-                this.logout();
-                window.location.href = 'banned.html?type=account';
+            if (useFirebase) {
+                // For Firebase, we trust the syncUser or we can do a quick check
+                db.collection('users').doc(this.currentUser.email).get().then(function(doc) {
+                    if (doc.exists && doc.data().isBanned) {
+                        window.auth.logout();
+                        window.location.href = 'banned.html?type=account';
+                    }
+                });
+            } else {
+                var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+                var user = users.find(function(u) { return u.email === this.currentUser.email; }.bind(this));
+                if (user && user.isBanned) {
+                    this.logout();
+                    window.location.href = 'banned.html?type=account';
+                }
             }
         }
     },

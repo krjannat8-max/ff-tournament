@@ -119,7 +119,7 @@ function closeGameIdModal() {
     currentJoinFee = 0;
 }
 
-function confirmJoinMatch() {
+async function confirmJoinMatch() {
     if (!currentJoinMatchId) return;
     
     const input = document.getElementById('modal-ign-input');
@@ -137,14 +137,30 @@ function confirmJoinMatch() {
         return;
     }
 
-    if (wallet.withdraw(currentJoinFee)) {
-        match.filledSpots = (Number(match.filledSpots) || 0) + 1;
-        match.totalSpots = Number(match.totalSpots) || 48;
-        localStorage.setItem('ff_matches', JSON.stringify(matches));
-        
-        // Track joined match in user profile with IGN
-        if (auth.addJoinedMatch) {
-            auth.addJoinedMatch(currentJoinMatchId, ign);
+    const withdrawn = await wallet.withdraw(currentJoinFee);
+    if (withdrawn) {
+        if (typeof useFirebase !== 'undefined' && useFirebase) {
+            try {
+                const matchRef = db.collection('matches').doc(String(currentJoinMatchId));
+                await matchRef.update({
+                    filledSpots: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                if (auth.addJoinedMatch) {
+                    await auth.addJoinedMatch(currentJoinMatchId, ign);
+                }
+            } catch (e) {
+                console.error("[Firebase] Match join failed:", e);
+                showToast('Failed to join match in cloud', 'error');
+            }
+        } else {
+            match.filledSpots = (Number(match.filledSpots) || 0) + 1;
+            match.totalSpots = Number(match.totalSpots) || 48;
+            localStorage.setItem('ff_matches', JSON.stringify(matches));
+            
+            if (auth.addJoinedMatch) {
+                auth.addJoinedMatch(currentJoinMatchId, ign);
+            }
         }
         
         showToast('Tournament Joined Successfully!', 'success');
