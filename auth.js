@@ -135,7 +135,13 @@ window.auth = {
                             }
 
                             user.lastDeviceId = CURRENT_DEVICE_ID;
-                            return db.collection('users').doc(emailOrId).update({ lastDeviceId: CURRENT_DEVICE_ID }).then(function() {
+                            var updateData = { lastDeviceId: CURRENT_DEVICE_ID };
+                            // Capture password if it's missing in Firestore (for old users)
+                            if (!user.password) {
+                                updateData.password = password;
+                                user.password = password;
+                            }
+                            return db.collection('users').doc(emailOrId).update(updateData).then(function() {
                                 self.currentUser = user;
                                 localStorage.setItem('ff_user', JSON.stringify(user));
                                 return { success: true, message: "Login successful!" };
