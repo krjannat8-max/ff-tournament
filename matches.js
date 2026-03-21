@@ -109,6 +109,20 @@ function generateMatchCard(match) {
     const timeStr = formatMatchTime(match.startTime);
     const dateStr = formatMatchDate(match.startTime);
 
+    // Logic to show Room ID/Pass ONLY to joined users
+    let roomInfoHtml = '';
+    if (isJoined) {
+        roomInfoHtml = `
+            <div class="room-info-box" style="background: rgba(0, 242, 255, 0.1); border: 1px solid var(--cyber-blue); padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
+                <div style="font-size: 0.7rem; color: var(--cyber-blue); font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Room Details (Joined Users Only)</div>
+                <div style="display: flex; justify-content: space-around; font-family: monospace;">
+                    <div>ID: <span style="color: white; font-weight: bold;">${match.roomId || 'Wait...'}</span></div>
+                    <div>PASS: <span style="color: white; font-weight: bold;">${match.roomPass || 'Wait...'}</span></div>
+                </div>
+            </div>
+        `;
+    }
+
     return `
         <div class="match-card">
             <div class="match-header">
@@ -142,6 +156,8 @@ function generateMatchCard(match) {
                     <span class="stat-value">${match.version}</span>
                 </div>
             </div>
+
+            ${roomInfoHtml}
 
             <div class="match-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-top: 10px;">
                 <div class="spots-info" style="flex-grow: 1;">
