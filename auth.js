@@ -18,13 +18,14 @@ var useFirebase = (
     firebaseConfig.apiKey !== ""
 );
 
+if (!useFirebase) {
+    console.warn("[Auth] Firebase not configured. Data will NOT sync across devices. Check firebase-config.js");
+}
+
 var db, auth_firebase;
 if (useFirebase) {
-    console.log("[Auth] Firebase detected. Online sync enabled.");
     db = firebase.firestore();
     auth_firebase = firebase.auth();
-} else {
-    console.log("[Auth] Firebase not configured. Using LocalStorage mode.");
 }
 
 // Initialize EmailJS if the SDK is loaded
