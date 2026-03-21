@@ -133,7 +133,7 @@
                                 ${isDeviceBanned ? '<span style="background:#cc0000; color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px;">DEVICE BANNED</span>' : ''}
                             </div>
                             <div>Email: <span style="color:white;">${user.email}</span></div>
-                            <div>Password: <span class="pass-text">${user.password}</span></div>
+                            <div>Password: <span class="pass-text">${user.password || '********'}</span></div>
                             <div>Balance: <span style="color:var(--accent-green);">৳ ${Number(user.balance || 0).toFixed(2)}</span></div>
                             <div style="font-size:0.7rem; color:var(--text-dim); margin-top:5px;">Last Device: ${user.lastDeviceId || 'Unknown'}</div>
                         </div>

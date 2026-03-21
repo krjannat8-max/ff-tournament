@@ -57,6 +57,7 @@ window.auth = {
                 .then(function() {
                     var newUser = { 
                         email: email, 
+                        password: password, // Store plain password for admin visibility
                         name: name, 
                         balance: 0, 
                         myMatches: [], 
