@@ -405,13 +405,17 @@
         function updateRoomInfo(id) {
             var rid = document.getElementById("rid-" + id).value;
             var rpass = document.getElementById("rpass-" + id).value;
+            var now = Date.now();
             
             if (typeof useFirebase !== 'undefined' && useFirebase) {
                 db.collection('matches').doc(String(id)).update({
                     roomId: rid,
-                    roomPass: rpass
+                    roomPass: rpass,
+                    roomInfoUpdatedAt: now
                 }).then(function() {
                     showToast("Room Info Updated Globally!", "success");
+                    // Trigger Notification (Placeholder for future FCM)
+                    sendRoomNotification(id, rid, rpass);
                 });
                 return;
             }
@@ -422,29 +426,22 @@
             if (idx !== -1) {
                 matches[idx].roomId = rid;
                 matches[idx].roomPass = rpass;
+                matches[idx].roomInfoUpdatedAt = now;
                 localStorage.setItem('ff_matches', JSON.stringify(matches));
                 showToast("Room Info Updated!", "success");
             }
         }
 
-        function viewParticipants(matchId) {
-            var modal = document.getElementById('participants-modal');
-            var list = document.getElementById('participants-list');
-            var title = document.getElementById('participants-match-title');
-            
-            if (typeof useFirebase !== 'undefined' && useFirebase) {
-                list.innerHTML = '<div style="text-align:center; padding:30px;">Checking participants...</div>';
-                db.collection('users').where('myMatches', 'array-contains', matchId).get().then(function(snapshot) {
-                    var participants = [];
-                    snapshot.forEach(function(doc) { participants.push(doc.data()); });
-                    renderParticipantsUI(participants, matchId);
-                });
-            } else {
-                var users = JSON.parse(localStorage.getItem('ff_users')) || [];
-                var participants = users.filter(function(u) { return u.myMatches && u.myMatches.indexOf(matchId) !== -1; });
-                renderParticipantsUI(participants, matchId);
-            }
-            modal.style.display = 'flex';
+        function sendRoomNotification(matchId, rid, rpass) {
+            // This is a placeholder for real FCM. 
+            // For now, we can use a Firestore 'notifications' collection that the app listens to.
+            db.collection('notifications').add({
+                type: 'ROOM_INFO',
+                matchId: matchId,
+                title: 'Room ID & Password Updated!',
+                body: 'ID: ' + rid + ' | PASS: ' + rpass,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
         }
 
         function renderParticipantsUI(participants, matchId) {
@@ -453,19 +450,62 @@
                 list.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">No participants joined yet.</div>';
             } else {
                 list.innerHTML = participants.map(function(u) {
+                    var currentResult = (u.results && u.results[matchId]) || 'PENDING';
                     return `
-                        <div class="participant-item">
-                            <div>
-                                <div style="font-weight:700; font-size:0.9rem;">${u.name}</div>
-                                <div style="font-size:0.7rem; color:var(--text-dim);">${u.email}</div>
+                        <div class="participant-item" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <div style="font-weight:700; font-size:0.9rem;">${u.name}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-dim);">${u.email}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.6rem; color:var(--accent-yellow); font-weight:800; text-transform:uppercase;">GAME ID</div>
+                                    <div style="font-family:monospace; color:var(--cyber-blue); font-weight:900; font-size:1rem;">${u.ignMap ? u.ignMap[matchId] || 'N/A' : 'N/A'}</div>
+                                </div>
                             </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:0.6rem; color:var(--accent-yellow); font-weight:800; text-transform:uppercase;">GAME ID</div>
-                                <div style="font-family:monospace; color:var(--cyber-blue); font-weight:900; font-size:1rem;">${u.ignMap ? u.ignMap[matchId] || 'N/A' : 'N/A'}</div>
+                            <div style="display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                                <button onclick="setResult('${u.email}', '${matchId}', 'WIN')" 
+                                        style="flex: 1; padding: 5px; border-radius: 4px; border: none; background: ${currentResult === 'WIN' ? '#22c55e' : '#1a2e1a'}; color: ${currentResult === 'WIN' ? 'black' : '#22c55e'}; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
+                                    WINNER
+                                </button>
+                                <button onclick="setResult('${u.email}', '${matchId}', 'LOSS')" 
+                                        style="flex: 1; padding: 5px; border-radius: 4px; border: none; background: ${currentResult === 'LOSS' ? '#ef4444' : '#2e1a1a'}; color: ${currentResult === 'LOSS' ? 'white' : '#ef4444'}; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
+                                    LOSER
+                                </button>
+                                <button onclick="setResult('${u.email}', '${matchId}', 'PENDING')" 
+                                        style="flex: 1; padding: 5px; border-radius: 4px; border: none; background: ${currentResult === 'PENDING' ? '#94a3b8' : '#1e293b'}; color: ${currentResult === 'PENDING' ? 'black' : '#94a3b8'}; font-size: 0.7rem; font-weight: 800; cursor: pointer;">
+                                    RESET
+                                </button>
                             </div>
                         </div>
                     `;
                 }).join('');
+            }
+        }
+
+        function setResult(email, matchId, result) {
+            if (typeof useFirebase !== 'undefined' && useFirebase) {
+                var userRef = db.collection('users').doc(email);
+                userRef.get().then(function(doc) {
+                    var data = doc.data();
+                    var results = data.results || {};
+                    results[matchId] = result;
+                    userRef.update({ results: results }).then(function() {
+                        showToast("Result set to " + result, "success");
+                        viewParticipants(matchId); // Refresh UI
+                    });
+                });
+                return;
+            }
+
+            var users = JSON.parse(localStorage.getItem('ff_users')) || [];
+            var idx = users.findIndex(u => u.email === email);
+            if (idx !== -1) {
+                if (!users[idx].results) users[idx].results = {};
+                users[idx].results[matchId] = result;
+                localStorage.setItem('ff_users', JSON.stringify(users));
+                showToast("Result set locally", "success");
+                viewParticipants(matchId);
             }
         }
 

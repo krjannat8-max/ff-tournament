@@ -193,7 +193,29 @@ document.addEventListener('DOMContentLoaded', function() {
             renderMatches(currentFilter); 
         }, function(error) {
             console.error("[Firebase] Error fetching matches:", error);
-            // Fallback to local rendering is already done by initial render
+        });
+
+        // Notification Listener
+        db.collection('notifications')
+          .orderBy('timestamp', 'desc')
+          .limit(1)
+          .onSnapshot(function(snapshot) {
+            snapshot.docChanges().forEach(function(change) {
+                if (change.type === "added") {
+                    var notify = change.doc.data();
+                    // Only show if it's a recent notification (within last 30 seconds)
+                    var isRecent = notify.timestamp && (Date.now() - notify.timestamp.toMillis() < 30000);
+                    
+                    if (isRecent && notify.type === 'ROOM_INFO') {
+                        // Check if current user is joined in this match
+                        if (auth.currentUser && auth.currentUser.myMatches && auth.currentUser.myMatches.includes(notify.matchId)) {
+                            showToast("📢 " + notify.title + "\n" + notify.body, "info");
+                            // Play a sound if possible (optional)
+                            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3').play(); } catch(e){}
+                        }
+                    }
+                }
+            });
         });
     }
 });

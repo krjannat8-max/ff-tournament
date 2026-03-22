@@ -92,6 +92,9 @@ function generateMatchCard(match) {
                     auth.currentUser.myMatches && 
                     auth.currentUser.myMatches.some(id => String(id) === String(match.id));
 
+    // Result Logic
+    const userResult = (auth.currentUser && auth.currentUser.results) ? auth.currentUser.results[match.id] : null;
+
     const btnText = isJoined ? 'JOINED' : (isFull ? 'FULL' : 'JOIN');
     const btnAction = (isJoined || isFull) ? 'disabled' : `onclick="joinMatch('${match.id}')"`;
     
@@ -100,25 +103,53 @@ function generateMatchCard(match) {
 
     let roomInfoHtml = '';
     if (isJoined) {
-        roomInfoHtml = `
-            <div style="background: rgba(0, 242, 255, 0.1); border: 1px dashed #00f2ff; border-radius: 12px; padding: 12px; margin: 15px 0;">
-                <div style="font-size: 0.65rem; color: #00f2ff; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Room Access Granted</div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="text-align: left;">
-                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">ID</div>
-                        <div style="font-size: 0.9rem; color: #fff; font-weight: 900; font-family: monospace;">${match.roomId || 'WAITING'}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">PASS</div>
-                        <div style="font-size: 0.9rem; color: #ffd700; font-weight: 900; font-family: monospace;">${match.roomPass || 'WAITING'}</div>
-                    </div>
+        const updatedAt = match.roomInfoUpdatedAt || 0;
+        const now = Date.now();
+        const diffMins = (now - updatedAt) / 60000;
+        const isExpired = updatedAt > 0 && diffMins > 15;
+
+        if (isExpired) {
+            roomInfoHtml = `
+                <div style="background: rgba(255, 75, 43, 0.1); border: 1px dashed #ff4b2b; border-radius: 12px; padding: 12px; margin: 15px 0; text-align: center;">
+                    <div style="font-size: 0.7rem; color: #ff4b2b; font-weight: 900; text-transform: uppercase;">Room Info Expired</div>
+                    <div style="font-size: 0.6rem; color: var(--text-dim); margin-top: 4px;">Hidden after 15 minutes for security</div>
                 </div>
+            `;
+        } else {
+            roomInfoHtml = `
+                <div style="background: rgba(0, 242, 255, 0.1); border: 1px dashed #00f2ff; border-radius: 12px; padding: 12px; margin: 15px 0;">
+                    <div style="font-size: 0.65rem; color: #00f2ff; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Room Access Granted</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: left;">
+                            <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">ID</div>
+                            <div style="font-size: 0.9rem; color: #fff; font-weight: 900; font-family: monospace;">${match.roomId || 'WAITING'}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.55rem; color: rgba(255,255,255,0.5);">PASS</div>
+                            <div style="font-size: 0.9rem; color: #ffd700; font-weight: 900; font-family: monospace;">${match.roomPass || 'WAITING'}</div>
+                        </div>
+                    </div>
+                    ${updatedAt > 0 ? `<div style="font-size: 0.5rem; color: var(--text-dim); text-align: center; margin-top: 8px;">Hiding in ${Math.max(0, Math.ceil(15 - diffMins))} mins</div>` : ''}
+                </div>
+            `;
+        }
+    }
+
+    // Result Badge
+    let resultBadge = '';
+    if (userResult && userResult !== 'PENDING') {
+        const color = userResult === 'WIN' ? '#22c55e' : '#ef4444';
+        const icon = userResult === 'WIN' ? 'fa-trophy' : 'fa-times-circle';
+        resultBadge = `
+            <div style="position: absolute; top: 10px; right: 10px; background: ${color}; color: ${userResult === 'WIN' ? 'black' : 'white'}; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; display: flex; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 0 15px ${color}66;">
+                <i class="fas ${icon}"></i> ${userResult}
             </div>
         `;
     }
 
     return `
         <div style="background: #1a1c23; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+            ${resultBadge}
             <div style="padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <span style="font-weight: 900; font-size: 0.95rem; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">${match.title}</span>
                 <span style="font-size: 0.7rem; color: #ffd700; font-weight: 800; background: rgba(255, 215, 0, 0.1); padding: 4px 10px; border-radius: 6px;"><i class="far fa-calendar-alt"></i> ${dateStr}</span>

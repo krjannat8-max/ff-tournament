@@ -59,10 +59,12 @@
     <script>
         function renderMyMatches() {
             const list = document.getElementById('my-matches-list');
+            if (!list) return;
+
             const joinedIds = auth.currentUser ? (auth.currentUser.myMatches || []) : [];
             const allMatches = getMatches();
             
-            const myMatches = allMatches.filter(m => joinedIds.includes(m.id));
+            const myMatches = allMatches.filter(m => joinedIds.includes(String(m.id)) || joinedIds.includes(Number(m.id)));
 
             if (myMatches.length === 0) {
                 list.innerHTML = `
@@ -76,9 +78,36 @@
             }
 
             list.innerHTML = myMatches.map(match => generateMatchCard(match)).join('');
+            if (typeof startCountdowns === 'function') startCountdowns();
         }
 
-        document.addEventListener('DOMContentLoaded', renderMyMatches);
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMyMatches();
+
+            if (typeof useFirebase !== 'undefined' && useFirebase && auth.currentUser) {
+                // Real-time listener for user data (to catch Win/Loss updates)
+                db.collection('users').doc(auth.currentUser.email).onSnapshot(function(doc) {
+                    if (doc.exists) {
+                        auth.currentUser = doc.data();
+                        localStorage.setItem('ff_user', JSON.stringify(auth.currentUser));
+                        renderMyMatches(); // Re-render with new results
+                    }
+                });
+
+                // Real-time listener for matches (to catch Room ID/Pass updates)
+                db.collection('matches').onSnapshot(function(snapshot) {
+                    var matches = [];
+                    snapshot.forEach(doc => {
+                        var m = doc.data();
+                        m.id = doc.id;
+                        matches.push(m);
+                    });
+                    window.currentMatches = matches;
+                    localStorage.setItem('ff_matches', JSON.stringify(matches));
+                    renderMyMatches();
+                });
+            }
+        });
     </script>
 </body>
 </html>
