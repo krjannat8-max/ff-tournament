@@ -41,11 +41,12 @@ function filterMatches(type) {
     const titleDisplay = document.getElementById('category-title-display');
 
     if (homeView && categoryView) {
-        // Clear any previous animation classes
+        // Reset classes
         homeView.classList.remove('section-animate', 'section-exit');
         categoryView.classList.remove('section-animate', 'section-exit');
         
-        // Exit animation for home
+        // Ensure home is visible for exit animation
+        homeView.style.display = 'block';
         homeView.classList.add('section-exit');
         
         setTimeout(() => {
@@ -54,12 +55,12 @@ function filterMatches(type) {
             
             categoryView.style.display = 'block';
             categoryView.classList.add('section-animate');
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             setTimeout(() => {
                 categoryView.classList.remove('section-animate');
             }, 800);
-        }, 500);
+        }, 550);
     }
 
     const titles = {
@@ -78,11 +79,12 @@ function showHome() {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
-        // Clear any previous animation classes
+        // Reset classes
         homeView.classList.remove('section-animate', 'section-exit');
         categoryView.classList.remove('section-animate', 'section-exit');
 
-        // Exit animation for category view
+        // Ensure category is visible for exit
+        categoryView.style.display = 'block';
         categoryView.classList.add('section-exit');
         
         setTimeout(() => {
@@ -91,12 +93,12 @@ function showHome() {
             
             homeView.style.display = 'block';
             homeView.classList.add('section-animate');
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             setTimeout(() => {
                 homeView.classList.remove('section-animate');
             }, 800);
-        }, 500);
+        }, 550);
     }
     renderMatches('ALL');
 }
