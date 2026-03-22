@@ -32,18 +32,6 @@
     </style>
 </head>
 <body class="page-transition">
-    <!-- Binary Shield (Anti-Crack Protection) -->
-    <div id="binary-shield">
-        <div class="binary-rain" id="binary-rain"></div>
-        <h1>SECURITY BREACH</h1>
-        <p>
-            CRACK ATTEMPT DETECTED.<br>
-            ENCRYPTION LOCK ACTIVE.<br>
-            SYSTEM REBOOT REQUIRED.
-        </p>
-        <div style="margin-top: 20px; font-size: 0.7rem; opacity: 0.6;">01000101 01010010 01010010 01001111 01010010</div>
-    </div>
-
     <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
 
     <header class="app-header">
@@ -68,7 +56,6 @@
     <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script src="wallet.js"></script>
-    <script src="security.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Wait for auth to be ready
