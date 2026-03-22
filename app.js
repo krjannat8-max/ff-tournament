@@ -40,26 +40,9 @@ function filterMatches(type) {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
-        // 1. Reset any stuck classes
-        homeView.classList.remove('section-animate', 'section-exit');
-        categoryView.classList.remove('section-animate', 'section-exit');
-        
-        // 2. Start exit animation
-        homeView.classList.add('section-exit');
-        
-        setTimeout(() => {
-            homeView.style.display = 'none';
-            homeView.classList.remove('section-exit');
-            
-            // 3. Start enter animation
-            categoryView.style.display = 'block';
-            categoryView.classList.add('section-animate');
-            window.scrollTo(0, 0); // Jump to top immediately
-            
-            setTimeout(() => {
-                categoryView.classList.remove('section-animate');
-            }, 750);
-        }, 450);
+        homeView.style.display = 'none';
+        categoryView.style.display = 'block';
+        window.scrollTo(0, 0);
     }
 
     const titles = {
@@ -78,26 +61,9 @@ function showHome() {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
-        // 1. Reset any stuck classes
-        homeView.classList.remove('section-animate', 'section-exit');
-        categoryView.classList.remove('section-animate', 'section-exit');
-
-        // 2. Start exit animation
-        categoryView.classList.add('section-exit');
-        
-        setTimeout(() => {
-            categoryView.style.display = 'none';
-            categoryView.classList.remove('section-exit');
-            
-            // 3. Start enter animation
-            homeView.style.display = 'block';
-            homeView.classList.add('section-animate');
-            window.scrollTo(0, 0); // Jump to top immediately
-            
-            setTimeout(() => {
-                homeView.classList.remove('section-animate');
-            }, 750);
-        }, 450);
+        homeView.style.display = 'block';
+        categoryView.style.display = 'none';
+        window.scrollTo(0, 0);
     }
     renderMatches('ALL');
 }
