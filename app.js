@@ -41,6 +41,10 @@ function filterMatches(type) {
     const titleDisplay = document.getElementById('category-title-display');
 
     if (homeView && categoryView) {
+        // Clear any previous animation classes
+        homeView.classList.remove('section-animate', 'section-exit');
+        categoryView.classList.remove('section-animate', 'section-exit');
+        
         // Exit animation for home
         homeView.classList.add('section-exit');
         
@@ -74,6 +78,10 @@ function showHome() {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
+        // Clear any previous animation classes
+        homeView.classList.remove('section-animate', 'section-exit');
+        categoryView.classList.remove('section-animate', 'section-exit');
+
         // Exit animation for category view
         categoryView.classList.add('section-exit');
         
