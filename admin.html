@@ -158,7 +158,7 @@
                     <label>Match Type</label>
                     <select id="m-type">
                         <option value="BR">BR CUSTOM</option>
-                        <option value="SURVIVAL">CS 2 vs 2</option>
+                        <option value="CS_2V2">CS 2 vs 2</option>
                         <option value="LONE_WOLF">LONE WOLF</option>
                         <option value="CS_4V4">CS 4 vs 4</option>
                     </select>
@@ -305,7 +305,13 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <div style="font-weight:bold;">${m.title}</div>
-                                <div style="font-size:0.7rem; color:var(--text-dim);">${m.type} - ৳${m.entryFee} FEE</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">
+                                    ${m.type === 'CS_2V2' || m.type === 'SURVIVAL' ? 'CS 2 vs 2' : 
+                                      m.type === 'BR' ? 'BR CUSTOM' : 
+                                      m.type === 'LONE_WOLF' ? 'LONE WOLF' : 
+                                      m.type === 'CS_4V4' ? 'CS 4 vs 4' : m.type} 
+                                    - ৳${m.entryFee} FEE
+                                </div>
                             </div>
                             <i class="fas fa-trash del-btn" onclick="deleteMatch(${displayId})"></i>
                         </div>

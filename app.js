@@ -3,6 +3,7 @@ let currentFilter = 'ALL';
 function renderMatches(filterType = currentFilter) {
     currentFilter = filterType;
     const list = document.getElementById('matches-list');
+    const categoryView = document.getElementById('category-view');
     
     // Get the latest matches (from cache or memory)
     let allMatches = getMatches();
@@ -10,12 +11,15 @@ function renderMatches(filterType = currentFilter) {
     // Always update home page category counts
     updateCategoryCounts(allMatches);
 
-    if (!list) return;
+    // Only proceed if matches-list exists AND category-view is visible
+    if (!list || !categoryView || categoryView.style.display === 'none') return;
 
-    let filtered = allMatches;
-    if (currentFilter !== 'ALL') {
-        filtered = allMatches.filter(m => String(m.type) === String(currentFilter));
-    }
+    let filtered = allMatches.filter(m => {
+        if (currentFilter === 'ALL') return true;
+        // Check for exact type or the old "SURVIVAL" for CS 2v2
+        if (currentFilter === 'CS_2V2') return m.type === 'CS_2V2' || m.type === 'SURVIVAL';
+        return String(m.type) === String(currentFilter);
+    });
 
     list.innerHTML = filtered.length > 0 ? 
         filtered.map(match => generateMatchCard(match)).join('') : 
@@ -25,9 +29,15 @@ function renderMatches(filterType = currentFilter) {
 }
 
 function updateCategoryCounts(matches) {
-    const categories = ['BR', 'SURVIVAL', 'LONE_WOLF', 'CS_4V4'];
+    const categories = ['BR', 'CS_2V2', 'LONE_WOLF', 'CS_4V4'];
     categories.forEach(type => {
-        const count = matches.filter(m => String(m.type) === String(type)).length;
+        const count = matches.filter(m => {
+            // Check for exact type or the old "SURVIVAL" for CS 2v2
+            if (type === 'CS_2V2') return m.type === 'CS_2V2' || m.type === 'SURVIVAL';
+            return String(m.type) === String(type);
+        }).length;
+        
+        // Find by partial onclick match to be safer
         const countEl = document.querySelector(`.category-card[onclick*="${type}"] .cat-count`);
         if (countEl) {
             countEl.innerText = `${count} matches found`;
@@ -38,6 +48,7 @@ function updateCategoryCounts(matches) {
 function filterMatches(type) {
     const homeView = document.getElementById('home-view');
     const categoryView = document.getElementById('category-view');
+    const titleDisplay = document.getElementById('category-title-display');
 
     if (homeView && categoryView) {
         homeView.style.display = 'none';
@@ -47,7 +58,7 @@ function filterMatches(type) {
 
     const titles = {
         'BR': 'BR CUSTOM TOURNAMENTS',
-        'SURVIVAL': 'CS 2 VS 2 BATTLE',
+        'CS_2V2': 'CS 2 VS 2 BATTLE',
         'LONE_WOLF': 'LONE WOLF 1 VS 1',
         'CS_4V4': 'CS 4 VS 4 SQUAD'
     };
@@ -65,7 +76,10 @@ function showHome() {
         categoryView.style.display = 'none';
         window.scrollTo(0, 0);
     }
-    renderMatches('ALL');
+    
+    // Update counts but don't render matches list for home
+    currentFilter = 'ALL';
+    updateCategoryCounts(getMatches());
 }
 
 function checkAdminUI() {
