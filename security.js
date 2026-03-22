@@ -1,9 +1,9 @@
 /**
- * ULTRA-PREMIUM SECURITY SHIELD v3.0 (APK Optimized)
- * Fixed loading/freezing issues for Mobile APK.
+ * ULTRA-PREMIUM SECURITY SHIELD v4.0 (Safe Mode)
+ * Removed automatic triggers that cause freezing in APK/Emulators.
  */
 (function() {
-    // 1. Hardcore Anti-Right Click & Copy
+    // 1. Basic Protections (Non-intrusive)
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('copy', e => e.preventDefault());
     document.addEventListener('selectstart', e => e.preventDefault());
@@ -22,7 +22,7 @@
         }
     };
 
-    // 2. Advanced Keyboard Block
+    // 2. Keyboard Block (Only for common inspection keys)
     window.onkeydown = function(e) {
         if (e.keyCode === 123 || (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || (e.shiftKey && (e.keyCode === 73 || e.keyCode === 74))))) {
             triggerShield();
@@ -30,23 +30,7 @@
         }
     };
 
-    // 3. DevTools Detection (Non-freezing version)
-    setInterval(() => {
-        // Detect window size changes (common for DevTools)
-        const threshold = 160;
-        const isDevToolsOpen = window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold;
-        
-        if (isDevToolsOpen) {
-            triggerShield();
-        }
-    }, 2000);
-
-    // 4. Protection for Firebase Config (Self-Healing)
-    if (typeof firebaseConfig === 'undefined') {
-        console.log("Security: System Integrity Compromised");
-    }
-
-    // 5. Anti-Iframe
+    // 3. Anti-Iframe
     if (window.self !== window.top) {
         window.top.location = window.self.location;
     }
