@@ -41,6 +41,9 @@ function filterMatches(type) {
     const titleDisplay = document.getElementById('category-title-display');
 
     if (homeView && categoryView) {
+        // Stop any current scroll
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        
         // Reset classes
         homeView.classList.remove('section-animate', 'section-exit');
         categoryView.classList.remove('section-animate', 'section-exit');
@@ -55,12 +58,11 @@ function filterMatches(type) {
             
             categoryView.style.display = 'block';
             categoryView.classList.add('section-animate');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             setTimeout(() => {
                 categoryView.classList.remove('section-animate');
-            }, 800);
-        }, 550);
+            }, 850);
+        }, 600);
     }
 
     const titles = {
@@ -79,6 +81,9 @@ function showHome() {
     const categoryView = document.getElementById('category-view');
 
     if (homeView && categoryView) {
+        // Stop any current scroll
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
         // Reset classes
         homeView.classList.remove('section-animate', 'section-exit');
         categoryView.classList.remove('section-animate', 'section-exit');
@@ -93,12 +98,11 @@ function showHome() {
             
             homeView.style.display = 'block';
             homeView.classList.add('section-animate');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             setTimeout(() => {
                 homeView.classList.remove('section-animate');
-            }, 800);
-        }, 550);
+            }, 850);
+        }, 600);
     }
     renderMatches('ALL');
 }
